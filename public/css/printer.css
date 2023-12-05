@@ -1,0 +1,149 @@
+body{
+	font-family: 'Helvetica', 'Arial', sans-serif;
+}
+.title{
+	font-size: 30px!important;
+}
+
+.text-center{
+	text-align: center!important;
+}
+.text-left{
+	text-align: left!important;
+}
+.text-right{
+	text-align: right!important;
+}
+
+footer {
+position: fixed;
+bottom: 0cm;
+left: 0cm;
+right: 0cm;
+height: 2cm;
+}
+
+.text-1{
+	font-size: 15px;
+	color: black;
+	margin: 2px;
+}
+
+.text-2{
+font-size: 18px;
+color: black;
+margin: 2px;
+}
+
+.attribute-1{
+	font-size: 18px;
+	color: black;
+	margin: 2px;
+
+}
+.attribute-2{
+	font-size: 18px;
+	color: black;
+	margin: 2px;
+}
+.attribute-3{
+	font-size: 23px;
+	color: black;
+	margin: 2px;
+}
+
+.value-1{
+	font-size: 15px;
+	color: red;
+	margin: 2px;
+}
+.value-2{
+	font-size: 19px;
+	color: red;
+	margin: 2px;
+}
+.value-3{
+	font-size: 23px;
+	color: red;
+	margin: 2px;
+}
+
+.col{
+	width: 100.8px
+}
+.col-1{
+	width: 100.8px
+}
+.col-2{
+	width: 201.6px;
+}
+.col-3{
+	width: 302.4px;
+}
+.col-4{
+	width: 403.2px;
+}
+.col-5{
+	width: 504px;
+}
+.col-6{
+	width: 604.8px;
+}
+.col-7{
+	width: 705.6px;
+}
+.col-8{
+	width: 806.4px;
+}
+.col-9{
+	width: 907.2px;
+}
+.col-10{
+	width: 1008px;
+}
+
+.strong{
+	font-weight: 600!important;
+}
+
+.subtext-1{
+	font-size: 12px;
+}
+
+.mx-auto {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+@page {
+	header: page-header;
+	footer: page-footer;
+	margin-bottom: 5rem;
+}
+
+img.alineadoTextoImagenCentro{
+  vertical-align: middle;
+  /* Ojo vertical-align: text-middle no existe*/
+}
+
+.invoice-title h2, .invoice-title h3 {
+	display: inline-block;
+}
+
+.table > tbody > tr {
+	border: 1px solid rgb(0, 0, 0);
+
+}
+
+.table > thead > tr {
+	border: 1px solid rgb(0, 0, 0);
+
+}
+
+.table > tbody > tr > .thick-line {
+	border-top: 2px solid;
+}
+
+.table-invoice, .main-th, .main-tr, .main-td{
+  border: 1px solid;
+}

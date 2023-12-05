@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"intelephense.diagnostics.undefinedTypes": false,
+		"editor.fontFamily": "Fira code",
+		"editor.fontLigatures": true,
+		"intelephense.diagnostics.undefinedMethods": false,
+		"files.autoSave": "onFocusChange",
+		"vetur.format.defaultFormatter.html": "js-beautify-html",
+		"vetur.format.defaultFormatter.js": "prettier-eslint",
+		"vetur.format.options.useTabs": true,
+		"vetur.format.scriptInitialIndent": true,
+		"vetur.format.styleInitialIndent": true,
+		"vetur.validation.templateProps": true,
+	}
+}

@@ -1,0 +1,106 @@
+body{
+	font-family: sans-serif!important;
+}
+
+/* table{
+	border:1px solid black;
+	border-radius: 5px;
+} */
+
+.bg-dmi{
+	background: #354f5e!important;
+	color:white
+}
+
+.border{
+	border:1px solid black;
+}
+
+.content-pdf{
+	border: 1px solid;
+	padding: 10px 30px 10px 30px;
+	border-radius: 5px;
+}
+
+.document-title{
+	font-size: 1.5rem!important;
+	font-weight: bold;
+	display: flex;
+
+}
+
+.table-title{
+	font-size: 1.2rem!important;
+	font-weight: bold;
+	display: flex;
+	text-align: center;
+}
+
+.subtitle{
+	font-size: 1.2rem!important;
+	font-weight: 600;
+	background: #354f5e!important;
+	border-radius: 5px;
+	text-align: center;
+}
+.subtitle-small{
+	font-size: 1rem!important;
+	background: #354f5e!important;
+	border-radius: 5px;
+	text-align: center;
+}
+
+.label-bold{
+	font-weight: bold;
+}
+
+.label-shadow{
+	font-size: 12px!important;
+	background: #354f5e;
+	padding: 1px 5px 1px 5px;
+	border-radius: 5px;
+
+}
+.label{
+	font-size: 12px!important;
+	height: 30px;
+}
+
+.section{
+	border:1px solid black;
+	border-radius:5px;
+}
+
+.text-center{
+	text-align: center!important;
+}
+.text-right{
+	text-align: right!important;
+}
+
+.justify-content-center{
+	justify-content: center;
+	display: flex;
+}
+
+.digital-sign{
+	color: #1c47e3!important;
+	font-style: italic!important;
+	font-size: 0.7rem;
+	text-transform: uppercase!important;
+}
+.handwritten-sign{
+	font-family: cursive;
+	font-size: 1.1rem;
+}
+
+.title-sign{
+	font-weight: 600!important;
+	font-size: 0.85rem;
+}
+
+.content-sign{
+	border: 1px solid black;
+	border-radius: 5px;
+}
+

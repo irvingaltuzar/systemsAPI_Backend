@@ -1,0 +1,98 @@
+
+body{
+    font-family: sans-serif !important;
+}
+
+table{
+    border:1px solid black;
+    border-radius: 5px;
+    display: inline-table;
+}
+
+    .td_custom {
+        border: 1px solid black;
+        border-collapse: collapse;
+      }
+.content-pdf{
+    border: 1px solid;
+    padding: 10px 30px 10px 30px;
+    border-radius: 5px;
+}
+
+.document-title{
+    font-size: 1.5rem!important;
+    font-weight: bold;
+    justify-content: center;
+    display: flex;
+    text-align: center;
+
+}
+
+.subtitle{
+    font-size: 1.2rem!important;
+    font-weight: 600;
+    background: #e9ecef!important;
+    border-radius: 5px;
+    text-align: center;
+}
+.subtitle-small{
+    font-size: .9rem!important;
+    background: #e9ecef!important;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.label-bold{
+    font-weight: bold;
+}
+
+.label-shadow{
+    font-size: 12px!important;
+    background: #e9ecef;
+    padding: 1px 5px 1px 5px;
+    border-radius: 5px;
+
+}
+.label{
+    font-size: 12px!important;
+}
+
+.section{
+    border:1px solid black;
+    border-radius:5px;
+}
+
+.text-center{
+    text-align: center!important;
+}
+
+.justify-content-center{
+    justify-content: center;
+    display: flex;
+}
+
+.digital-sign{
+    color: #1c47e3!important;
+    font-style: italic!important;
+    font-size: 0.7rem;
+    text-transform: uppercase!important;
+}
+.handwritten-sign {
+    font-family: "firma_digital", sans-serif !important;
+    font-size: 30px;
+    font-weight: 900;
+    font-style: oblique;
+    text-transform: capitalize;
+   
+}
+
+.title-sign{
+    font-weight: 600!important;
+    font-size: 0.85rem;
+}
+
+.content-sign{
+    border: 1px solid black;
+    border-radius: 5px;
+}
+
