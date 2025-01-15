@@ -5,7 +5,7 @@
     <br>
     El proveedor <strong>{{$data["data"]['business_name']}}</strong> {{$data['content']}}<strong> Estatus: {{$data["data"]['efo']}}</strong> .
 
-    @component('mail::button', ['url' => 'http://192.168.3.170:8006'])
+    @component('mail::button', ['url' => 'http://192.168.3.170:8080/proveedores/panel'])
 Ingresar
 @endcomponent
 

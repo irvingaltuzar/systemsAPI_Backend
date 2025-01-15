@@ -17,15 +17,18 @@ use Illuminate\Support\Facades\Storage;
 use App\Services\SendEmailService;
 use App\Services\IntelisisSenderService;
 use App\Http\Controllers\NotificationCenterController;
+use App\Repositories\GeneralFunctionsRepository;
 
 class JustificationController extends Controller
 {
 
-  public function __construct(SendEmailService $sendEmail, IntelisisSenderService $intelisisService, NotificationCenterController $notificationCenter)
+  public function __construct(SendEmailService $sendEmail, IntelisisSenderService $intelisisService, NotificationCenterController $notificationCenter,
+                              GeneralFunctionsRepository $_GeneralFunctionsRepository)
     {
         $this->sendEmail = $sendEmail;
         $this->intelisisService = $intelisisService;
         $this->notificationCenter= $notificationCenter;
+        $this->GeneralFunctionsRepository = $_GeneralFunctionsRepository;
 
     }
     protected function addJustification(Request $request){
@@ -94,8 +97,20 @@ class JustificationController extends Controller
           "Solicitud aprobacion de justificacion",
       "Se necesita tu aprobación para la solicitud de justificacion del usuario ".auth()->user()->usuario.", consulta para mas detalles...",
       "notification",
-      "AutorizarJustificacion",
+      "authorisations",
       "sign_request","media");
+
+      $data = [
+        'data' =>[
+          "folio" => $justification->id,
+          'subject' => "Solicitud de Justificación",
+          'collaborator_name' => $top->full_name,
+          'boss_name' => $boss->full_name,
+        ],
+        'module' => "justification",
+        'to_email' => $boss->email,
+      ];
+      $this->sendEmail->justificationRequestNotification($data);
 
         return response()->json(['success'=>'Justification se ha creado correctamente.'],200);
   }
@@ -190,10 +205,12 @@ class JustificationController extends Controller
     protected function getJustificationsMyPersonal(){
       if(Auth::check()){
           $arr=[];
-          $res = PersonalIntelisis::with('commanding_staff')->where("usuario_ad",Auth::user()->usuario)->where('status', '!=', "BAJA")->get();
-         $this->encuentraParents($res,$salida,null);
-         if(count($salida)>0){
-        foreach($salida as $pers){
+          /* $res = PersonalIntelisis::with('commanding_staff')->where("usuario_ad",Auth::user()->usuario)->where('status', '!=', "BAJA")->get();
+         $this->encuentraParents($res,$salida,null); */
+         //$salida = PersonalIntelisis::where('top_plaza_id',Auth::user()->personal_intelisis->plaza_id)->where('status', '!=', "BAJA")->get();
+         $commanding_staff = $this->GeneralFunctionsRepository->getCommandingStaff(auth()->user()->personal_intelisis->plaza_id,'all_fields');
+         if(count($commanding_staff)>0){
+        foreach($commanding_staff as $pers){
           $res2= Justification::with("dmirh_cat_type_justification")->where("user",$pers->usuario_ad)->where("approved_by",null)->orderBy("date","desc")->get();
           if(count($res2)>0){
           foreach($res2 as $obJust){
@@ -289,5 +306,29 @@ class JustificationController extends Controller
           }
       }
   }
+
+    public function getNumberJustification(Request $request){
+
+        $user = PersonalIntelisis::where('rfc',$request->rfc)->where('status','alta')->first();
+
+        if($user != null){
+            $justifications = Justification::join('cat_type_justification','cat_type_justification.id','=','dmirh_personal_justification.type_id')
+                                            ->where('cat_type_justification.description','Entrada fuera de Horario')
+                                            ->whereNull('cat_type_justification.deleted_at')
+                                            ->whereNull('dmirh_personal_justification.deleted_at')
+                                            ->where('dmirh_personal_justification.user',$user->usuario_ad)
+                                            ->whereMonth('date',Carbon::parse($request->date)->format('m'))
+                                            ->select('dmirh_personal_justification.*')
+                                            ->count();
+
+            
+            return ["number_justifications" => $justifications];
+        }else{
+            return ["number_justifications" => 0];
+        }
+        
+        
+
+    }   
 
 }

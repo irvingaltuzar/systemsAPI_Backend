@@ -41,8 +41,8 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            EnsureFrontendRequestsAreStateful::class,
-            'throttle:60,1',
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class, // añadimos esto
+              \Illuminate\Routing\Middleware\ThrottleRequests::class => \Illuminate\Routing\Middleware\ThrottleRequests::class . ':20,1', 
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
     ];
@@ -56,6 +56,7 @@ class Kernel extends HttpKernel
      */
     protected $routeMiddleware = [
         'auth' => \App\Http\Middleware\Authenticate::class,
+        // 'auth.api' => \App\Http\Middleware\AuthenticateAPI::class,
         'verifyBearerToken' => \App\Http\Middleware\VerifyBearerToken::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'bindings' => \Illuminate\Routing\Middleware\SubstituteBindings::class,

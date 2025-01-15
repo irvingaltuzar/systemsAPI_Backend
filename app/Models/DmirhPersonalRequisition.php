@@ -60,6 +60,9 @@ class DmirhPersonalRequisition extends Model
 		'date_validation_rh' => 'date:d-m-Y',
 		'date_received_rh' => 'date:d-m-Y',
 		'date_estimate_coverage' => 'date:d-m-Y',
+		'created_at' => 'datetime:Y-m-d h:i:s',
+		'updated_at' => 'datetime:Y-m-d h:i:s',
+		'deleted_at' => 'datetime:Y-m-d h:i:s',
 	];
 
 	protected $dates = [

@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Query\Builder;
 use App\Models\OAuthTokenProcore;
 use App\Models\OAuthRefreshTokenProcore;
-
+use App\Models\CatTipoAdjunto;
+use App\Models\ProcoreConfiguration;
 class VendorsController extends Controller
 
 {
@@ -24,11 +25,13 @@ class VendorsController extends Controller
 	}
         public function CreateVendor($vendor){
         try {
+            $config= ProcoreConfiguration::latest()->first();
+
             $path = "/rest/v1.0/vendors";
 
             $response_data = $this->procoreAPI->post( $path, [
                 'body' => json_encode([
-                    'company_id' => 4266708,
+                    'company_id' => $config->company_id,
                     "vendor" => [
                         'name'=> $vendor->business_name,
                         'address'=> $vendor->address." ".$vendor->suburb,
@@ -51,8 +54,8 @@ class VendorsController extends Controller
 
         public function CreateUserVendor($vendor){
             try {
-             
-                $path = "/rest/v1.0/companies/4266708/users";
+                $config= ProcoreConfiguration::latest()->first();
+                $path = "/rest/v1.3/companies/".$config->company_id."/users";
     
                 $response_data =$this->procoreAPI->post( $path, [
                     'body' => json_encode([
@@ -60,7 +63,8 @@ class VendorsController extends Controller
                             'last_name'=> $vendor->contact,
                             'email_address'=> $vendor->email,
                             'business_phone'=> $vendor->phone,
-                            'is_active'=> true
+                            'is_active'=> true,
+                            'vendor_id'=> $vendor->procore_id
                         ]
                     ]),
                 ]);
@@ -72,14 +76,25 @@ class VendorsController extends Controller
             }
             }
 
-            public function InviteVendor($id){
+            public function DeleteCompanyFolder($id){
+                try {
+                    $config= ProcoreConfiguration::latest()->first();
+                    $path = "/rest/v1.0/companies/".$config->company_id."/folders/".$id;
+        
+                    $response_data =$this->procoreAPI->delete($path);
                 
-                    $path = "/rest/v1.3/companies/4266708/users/".$id."/invite";
+                    return $response_data;
+                } catch (Exception $e) {
+                    // For example, connection issues, timeouts, etc.
+                    $statusCode = $response->status();
+                }
+                }
+
+            public function InviteVendor($id){
+                $config= ProcoreConfiguration::latest()->first();
+                    $path = "/rest/v1.3/companies/".$config->company_id."/users/".$id."/invite";
         
                     $response = $this->procoreAPI->patch($path);
-                    // $payroll_data = $response_data->getBody();
-                    // // Convert the JSON response to an associative array
-                    //     $responseData = json_decode($payroll_data, true);
         
                     return $response;
               
@@ -88,11 +103,10 @@ class VendorsController extends Controller
         public function callback(Request $request)
         {
             $code = $request->input('code');
-    
             // Ahora $code contiene el valor del código de autorización
            $id_token= OAuthTokenProcore::find($code);
             if($id_token=="" || $id_token==null){
-        
+       
                 $this->procoreAPI->addCodeAccessToken($code);
             }
            $response =  $this->newAccessToken($code);
@@ -103,14 +117,14 @@ class VendorsController extends Controller
 
 
          public function newAccessToken($code){
-
+            $config= ProcoreConfiguration::latest()->first();
             $response = $this->procoreAPI->postLogin("/oauth/token",[
                 "body" => json_encode([
                     "grant_type" => 'authorization_code',
                     "code" => $code,
-                    "client_id" =>  env('CLIENT_ID_PROCORE'),
-                    "client_secret" => env('CLIENT_SECRET_PROCORE'),
-                    "redirect_uri" => "http://localhost:8000/redirect",
+                    "client_id" =>  $config->client_id,
+                    "client_secret" => $config->client_secret,
+                    "redirect_uri" => env('APP_URL')."/redirect",
                 ])
             ]);
 
@@ -118,32 +132,130 @@ class VendorsController extends Controller
 
             return $response;
          }
-
-         public function fileprocore(){
-            // $response = $this->procoreAPI->post("/oauth/token",[
-            //     "grant_type" => "client_credentials",
-            //     "client_id" =>  env('CLIENT_ID_PROCORE'),
-            //     "client_secret" => env('CLIENT_SECRET_PROCORE'),
-            // ]);
-            //  $this->procoreAPI->refreshToken();
-            // $arr=array();
-            // $arr=['company_id' =>4266708];
-            $file = Storage::disk("Proveedores")->path('intranet.pdf');
-           
-            $result = [];
-            $fileContents = base64_encode(file_get_contents($file));
-
-            mb_parse_str($fileContents, $result);
-        //    return $result;
-            // $fileContent = base64_encode(file_get_contents($file));
+         public function CreateCompanyFolder($name){
             try {
-                $response=  $this->procoreAPI->post("/rest/v1.0/companies/4266708/files",[
+                $config= ProcoreConfiguration::latest()->first();
+                $path = "/rest/v1.0/companies/".$config->company_id."/folders";
+    
+                $response_data =$this->procoreAPI->post( $path, [
+                    'body' => json_encode([
+                        "folder" => [
+                            "parent_id"=> $config->folder_company_id,
+                            "name"=>  $name,
+                            // "is_tracked"=>  true,
+                            "explicit_permissions"=>  false,
+                        ]
+                    ]),
+                ]);
+            
+                return $response_data;
+            } catch (Exception $e) {
+                // For example, connection issues, timeouts, etc.
+                $statusCode = $response->status();
+            }
+            }
+
+         public function fileprocore($name,$idFolder){
+
+         $file = Storage::disk('Proveedores')->path($name);
+         $config= ProcoreConfiguration::latest()->first();
+
+        $name=basename($file);
+        $ext= pathinfo(storage_path($file), PATHINFO_EXTENSION);
+        $mimeType= CatTipoAdjunto::where("extension",".".$ext)->first();
+
+            try {
+                $response=  $this->procoreAPI->post("/rest/v1.1/companies/".$config->company_id."/uploads",[
+                    'body' => json_encode([
+                        "response_filename"=> $name,
+                        "response_content_type"=> $mimeType->mimeType,
+                    ]),
+                    ]
+                );
+                   $this->uploadfileAmazon($response,$name,$mimeType->mimeType);
+                 return $this->relatedFileFolder($name,$response["data"]["uuid"],$idFolder);
+                return $response;            
+
+            } catch (Exception $e) {
+                // For example, connection issues, timeouts, etc.
+                $statusCode = $response->status();
+            }
+            }
+
+            public function uploadfileAmazon($response,$filename,$mimeType){
+
+                
+                $file = Storage::disk("Proveedores")->path($filename);
+                $fileExists = Storage::disk('Proveedores')->exists($filename);
+                if (!$fileExists) {
+                    $file = Storage::disk("EFO")->path($filename);
+                }
+
+                try {
+                    $response=  $this->procoreAPI->postMultipart($response["data"]["url"],[
+                        'multipart' => [
+                            [
+                                'name' => 'key',
+                                'contents' => $response["data"]["fields"]["key"]
+                            ],
+                            [
+                                'name' => 'Content-Type',
+                                'contents' => $mimeType
+                            ],
+                            
+                            [
+                                'name' => 'Content-Disposition',
+                                'contents' => 'inline; filename="'.$filename.'"'
+                            ],
+                            [
+                                'name' => 'policy',
+                                'contents' => $response["data"]["fields"]["policy"]
+                            ],
+                            [
+                                'name' => 'x-amz-credential',
+                                'contents' => $response["data"]["fields"]["x-amz-credential"]
+                            ],
+                            [
+                                'name' => 'x-amz-algorithm',
+                                'contents' => $response["data"]["fields"]["x-amz-algorithm"]
+                            ],
+                            [
+                                'name' => 'x-amz-date',
+                                'contents' => $response["data"]["fields"]["x-amz-date"]
+                            ],
+                            [
+                                'name' => 'x-amz-signature',
+                                'contents' => $response["data"]["fields"]["x-amz-signature"]
+                            ],
+                            [
+                                'name' => 'file',
+                                'contents' => file_get_contents($file),
+                                'filename' => $filename // Nombre del archivo
+                            ],
+                        ]
+                    ]
+                    );
+    
+                    return $response;            
+    
+                } catch (Exception $e) {
+                    // For example, connection issues, timeouts, etc.
+                    $statusCode = $response->status();
+                }
+            }
+
+         public function relatedFileFolder($name,$uuid,$idFolder){
+            $config= ProcoreConfiguration::latest()->first();
+            try {
+                $response=  $this->procoreAPI->post("/rest/v1.0/companies/".$config->company_id."/files",[
                     'body' => json_encode([
                         "file" => [
-                                'parent_id' => 11906880,
-                                'name' => 'sdfv.pdf',
-                                'data' => $fileContents
-                            ]
+                                'parent_id' => $idFolder,
+                                'name' => $name,
+                                'upload_uuid' => $uuid
+                                // 'data' => $fileContents
+                        ],
+                        "content_type"=> "application/pdf"
                         ]),
                     ]
                 );
@@ -155,7 +267,8 @@ class VendorsController extends Controller
             }           
                     
          }
-
+       
+        
          public function me(){
             try {
                
@@ -184,13 +297,4 @@ class VendorsController extends Controller
             return $response;
          }
 
-
-        //  public function test1(){
-        //     try {
-        //         $results = DB::connection('erp_dmi_sqlsrv')->select("SET NOCOUNT ON; EXEC spAPIValidaDatos 'PROCORE','PROVEEDOR','ISH2006022Q1'");
-        //         dd($results);
-        //     } catch (\Exception $e) {
-        //         dd($e->getMessage());
-        //     }
-        //  }
 }

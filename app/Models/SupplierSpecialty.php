@@ -21,11 +21,13 @@ class SupplierSpecialty extends Model
 
 	public function catSpecialty()
 	{
-		return $this->belongsTo(CatSupplierSpecialty::class, 'cat_supplier_specialty');
+		 // Incluye especialidades eliminadas lógicamente
+		 return $this->belongsTo(CatSupplierSpecialty::class, 'cat_supplier_specialty')->withTrashed();
 	}
 
 	public function getSpecialtyNameAttribute()
 	{
-		return !!$this->catSpecialty ? $this->catSpecialty->description : 'Histórico';
+		 // Verifica si tiene especialidad asignada
+		 return $this->catSpecialty ? $this->catSpecialty->description : 'Histórico';
 	}
 }

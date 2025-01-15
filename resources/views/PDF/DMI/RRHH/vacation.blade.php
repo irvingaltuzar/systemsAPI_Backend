@@ -88,9 +88,9 @@
 					<td  class="text-center"><span class="label">Días otorgados al año: </span> <span class="label-shadow">{{$vacation_days_law}}</span></td>
 				</tr>
 				<tr>
-					<td class="text-center"><span class="label">Saldo inicial: </span> <span class="label-shadow">{{$data->previous_balance}} {{$data->previous_balance > 1 ? 'días' : 'día'}}</span></td>
+					<td class="text-center"><span class="label">Saldo inicial: </span> <span class="label-shadow">{{$saldo_inicial}} {{$saldo_inicial > 1 ? 'días' : 'día'}}</span></td>
 					<td class="text-center"><span class="label">Solicitado: </span> <span class="label-shadow">{{$data->total_days}}</span></td>
-					<td class="text-center"><span class="label">Saldo final: </span> <span class="label-shadow">{{$data->previous_balance - $data->total_days}}</span></td>
+					<td class="text-center"><span class="label">Saldo final: </span> <span class="label-shadow">{{$saldo_inicial - $data->total_days}}</span></td>
 				</tr>
 
 			</table>

@@ -20,18 +20,16 @@ use PDF;
 use App\Models\DmiabaDocumentsSupplier;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
-use App\Http\Controllers\Procore\Proveedores\VendorsController;
 use Illuminate\Support\Promise\Promise;
 
 class SuppliersController extends Controller
 {
 	 private $sendEmail, $intelisisService, $vendor;
 
-	public function __construct(SendEmailService $sendEmail, IntelisisSenderService $intelisisService,VendorsController $vendor)
+	public function __construct(SendEmailService $sendEmail, IntelisisSenderService $intelisisService)
 	{
 		$this->sendEmail = $sendEmail;
 		$this->intelisisService = $intelisisService;
-        $this->vendor= $vendor;
 	}
 
 	public function getTotalData()
@@ -261,48 +259,48 @@ class SuppliersController extends Controller
         return $specialties;
 	}
 
-	public function approve(Request $request)
-	{
-		$name = Auth::user()->personal_intelisis->name;
-		$last_name = Auth::user()->personal_intelisis->last_name;
-    //Send Data information to Procore API
+	// public function approve(Request $request)
+	// {
+	// 	$name = Auth::user()->personal_intelisis->name;
+	// 	$last_name = Auth::user()->personal_intelisis->last_name;
+    // //Send Data information to Procore API
        
-		$tmp_supplier = DmiabaSupplierRegistration::where('id', $request->id)
-							->first();
+	// 	$tmp_supplier = DmiabaSupplierRegistration::where('id', $request->id)
+	// 						->first();
 
-		if ($request->status == 1) {
-			if ($tmp_supplier->status === "0") {
-				try {
-					$result= $this->vendor->CreateVendor($tmp_supplier);
-					$promise= $this->vendor->CreateUserVendor($tmp_supplier);
-					$this->vendor->InviteVendor($promise["id"]);
-				} catch (\Throwable $th) {
-					throw $th;
-				}
-				// $this->sendEmail->sendApproveMessage($tmp_supplier, 'approve');
+	// 	if ($request->status == 1) {
+	// 		if ($tmp_supplier->status === "0") {
+	// 			try {
+	// 				$result= $this->vendor->CreateVendor($tmp_supplier);
+	// 				$promise= $this->vendor->CreateUserVendor($tmp_supplier);
+	// 				$this->vendor->InviteVendor($promise["id"]);
+	// 			} catch (\Throwable $th) {
+	// 				throw $th;
+	// 			}
+	// 			// $this->sendEmail->sendApproveMessage($tmp_supplier, 'approve');
 
-				// $intelisis_active = $this->intelisisService->supplierStatus($tmp_supplier, $request->status, 'null');
+	// 			// $intelisis_active = $this->intelisisService->supplierStatus($tmp_supplier, $request->status, 'null');
 
-				$supplier = DmiabaSupplierRegistration::where('id', $request->id)
-								->update([
-									'status' => $request->status,
-									'user_approved' => "${name} ${last_name}",
-									// 'referencia_intelisis' => $intelisis_active[0]->Proveedor
-								]);
+	// 			$supplier = DmiabaSupplierRegistration::where('id', $request->id)
+	// 							->update([
+	// 								'status' => $request->status,
+	// 								'user_approved' => "${name} ${last_name}",
+	// 								// 'referencia_intelisis' => $intelisis_active[0]->Proveedor
+	// 							]);
 
-					return response()->json([
-						'supplier' => $supplier,
-						'message' => 'Proveedor enviado a Procore correctamente',
-						'success' => 1
-					]);
-			} else {
-				return response()->json([
-					'message' => 'Error al aprobar, proveedor previamente aprobado, actualice su tabla.',
-					'success' => 0
-				], 500);
-			}
-		}
-	}
+	// 				return response()->json([
+	// 					'supplier' => $supplier,
+	// 					'message' => 'Proveedor enviado a Procore correctamente',
+	// 					'success' => 1
+	// 				]);
+	// 		} else {
+	// 			return response()->json([
+	// 				'message' => 'Error al aprobar, proveedor previamente aprobado, actualice su tabla.',
+	// 				'success' => 0
+	// 			], 500);
+	// 		}
+	// 	}
+	// }
 
 	public function approve_Intelisis(Request $request)
 	{

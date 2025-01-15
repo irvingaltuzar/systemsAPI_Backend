@@ -36,11 +36,16 @@ class IntelisisSenderService
 		return DB::connection('erp_sqlsrv')->select("SET NOCOUNT ON; EXEC SP_InsertarAcumDatosIntranet $rama, $cuenta") ;
 	}
 
-	public function getPayroll(int $year)
-	{
-		$numempleado = Auth::user()->personal_intelisis->personal_id;
+	public function getPayroll(int $year, $_rfc = null)
+	{	
+		if($_rfc == null){
+			$rfc = Auth::user()->personal_intelisis->rfc;
+		}else{
+			$rfc = $_rfc;
+		}
+		
 
-		$data = DB::connection('erp_sqlsrv')->select("SET NOCOUNT ON; EXEC Intranet.dbo.spNominasPersonal $numempleado, $year");
+		$data = DB::connection('erp_sqlsrv')->select("SET NOCOUNT ON; EXEC Intranet.dbo.spNominasPersonal $rfc, $year");
 
 		$collect = collect($data);
 

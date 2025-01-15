@@ -5,7 +5,7 @@ El proveedor {{ $data->business_name }} ha sido dado de baja, por: {{ $data->rem
 <br>
 Motivo: {{ $data->comment }}
 
-@component('mail::button', ['url' => 'http://192.168.3.170:8006'])
+@component('mail::button', ['url' => 'http://192.168.3.170:8080/proveedores/panel'])
 Ingresar
 @endcomponent
 

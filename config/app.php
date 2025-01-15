@@ -67,7 +67,7 @@ return [
     |
     */
 
-    'timezone' => 'America/Mazatlan',
+    'timezone' => 'America/Mexico_City',
 
     /*
     |--------------------------------------------------------------------------
@@ -175,7 +175,7 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         Reliese\Coders\CodersServiceProvider::class,
-
+        Laravel\Sanctum\SanctumServiceProvider::class,
         // //ldap
         // Adldap\Laravel\AdldapServiceProvider::class,
         // Adldap\Laravel\AdldapAuthServiceProvider::class,

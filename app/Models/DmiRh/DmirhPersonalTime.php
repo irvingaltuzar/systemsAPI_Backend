@@ -55,6 +55,10 @@ class DmirhPersonalTime extends Model
 		'deleted'
 	];
 
+	protected $appends=[
+		'hours_week'
+	];
+
 	public function dmirh_cat_time_status()
 	{
 		return $this->belongsTo(DmirhCatTimeStatus::class);
@@ -68,7 +72,11 @@ class DmirhPersonalTime extends Model
 	public function dmirh_personal_time_details()
 	{
 		return $this->hasMany(DmirhPersonalTimeDetail::class)
-				->orderBy('week_day')
-				->where('deleted',0);
+				->where('deleted',0)
+				->orderBy('week_day');
+	}
+
+	public function getHoursWeekAttribute(){
+		return  DmirhPersonalTimeDetail::where('dmirh_personal_time_id',$this->dmirh_personal_time_id)->where('deleted',0)->sum('hours_day');
 	}
 }

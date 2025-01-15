@@ -9,7 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use App\Models\DmiControlSignaturesBehalf;
 use App\Models\PersonalIntelisis;
-
+use Illuminate\Support\Facades\DB;
 class SendEmailService
 {
 	public function test()
@@ -27,7 +27,7 @@ class SendEmailService
 	{
 
 		$mails = [$_data['to_email']];
-		//$mails = ["eladio.perez@grupodmi.com.mx"];
+		//$mails = 'eladio.perez@grupodmi.com.mx';
 		$data = $_data['data'];
 		$module = $_data['module'];
 
@@ -36,21 +36,24 @@ class SendEmailService
 
 	public function sendCancelMessage($data, $type)
 	{
+		if($data->supplier['user']==env('USER_PROCORE')){
+			$main_mail=$data->supplier['email'];
+			$type="cancel_Procore";
+		}else{
+			$main_mail = $data->supplier['responsable']['email'] != null ? $data->supplier['responsable']['email'] : $data->second_mail;
 
-		$main_mail = $data->supplier['responsable']['email'] != null ? $data->supplier['responsable']['email'] : $data->second_mail;
-
+		}
+		$adm = DB::table("cat_supplier_notification")->where("deleted_at",null)->select('mail')->get();
+        $abamails=[];
+        foreach ($adm as $row) {
+            $abamails[]= $row->mail;
+        }
 
 		$mails = [
-			'main_mails' => [
-				$main_mail,
-				'laura.faustino@grupodmi.com.mx',
-				'teresa.campos@grupodmi.com.mx',
-				'martin.soto@andares.com',
-				'rodrigo.rondero@grupodmi.com.mx'
-			],
+			'main_mails' => array_merge([$main_mail], $abamails), // Fusiona $main_mail con $abamails
 			'second_mails' => [
 				$data->second_mail
-			]
+			],
 		];
 
 		dispatch(new \App\Jobs\SendEmailJob($mails, $data, $type))->afterResponse();
@@ -58,15 +61,33 @@ class SendEmailService
 
 	public function sendApproveMessage($data, $type)
 	{
+
+		$user = Auth()->user()->personal_intelisis;
+		$full_name = "$user->name $user->last_name";
+
+		if($data["user"]==env('USER_PROCORE')){
+			$main_mail=$data["email"];
+			$type="approve_Procore";
+		}else{
+			$main_mail = $data->responsable["email"];
+
+		}
+
+		$adm = DB::table("cat_supplier_notification")->where("deleted_at",null)->select('mail')->get();
+        $abamails=[];
+        foreach ($adm as $row) {
+            $abamails[]= $row->mail;
+        }
+
 		$mails = [
 			'main_mails' => [
-				$data->responsable->email,
-				'laura.faustino@grupodmi.com.mx',
-				'teresa.campos@grupodmi.com.mx',
-				'martin.soto@andares.com',
-				'rodrigo.rondero@grupodmi.com.mx'
+				$main_mail
 			],
 		];
+		$mergedArray = array_merge($mails['main_mails'], $abamails);
+
+		// Asignar el resultado a la clave 'main_mails' del array original
+		$mails['main_mails'] = $mergedArray;
 
 		dispatch(new \App\Jobs\SendEmailJob($mails, $data, $type))->afterResponse();
 	}
@@ -76,17 +97,29 @@ class SendEmailService
 		$user = Auth()->user()->personal_intelisis;
 
 		$full_name = "$user->name $user->last_name";
+		if($data["user"]==env('USER_PROCORE')){
+			$main_mail=$data["email"];
+			$type="remove_Procore";
+		}else{
+			$main_mail = $data->responsable->email;
 
+		}
+
+		$adm = DB::table("cat_supplier_notification")->where("deleted_at",null)->select('mail')->get();
+        $abamails=[];
+        foreach ($adm as $row) {
+            $abamails[]= $row->mail;
+        }
 		$mails = [
 			'main_mails' => [
-				$data->responsable->email,
-				'laura.faustino@grupodmi.com.mx',
-				'teresa.campos@grupodmi.com.mx',
-				'martin.soto@andares.com',
-				'rodrigo.rondero@grupodmi.com.mx'
+				$main_mail,
 			],
 		];
+		$mergedArray = array_merge($mails['main_mails'], $abamails);
 
+		// Asignar el resultado a la clave 'main_mails' del array original
+		$mails['main_mails'] = $mergedArray;
+		
 		$data['comment'] = $comment;
 		$data['removed_by'] = $full_name;
 
@@ -167,5 +200,41 @@ class SendEmailService
 	{
 
 		dispatch(new \App\Jobs\SendEmailJob($mails, $data, "autorize_requisition"))->afterResponse();
+	}
+
+	public function justificationRequestNotification($_data){
+		$mails = [$_data['to_email']];
+		//$mails = ["eladio.perez@grupodmi.com.mx"];
+		$data = $_data['data'];
+		$module = $_data['module'];
+
+		dispatch(new \App\Jobs\SendEmailJob($mails, $data, $module))->afterResponse();
+
+	}
+
+	public function ChangeWorkScheduleNotification($_data){
+		$mails = [$_data['to_email']];
+		//$mails = ["eladio.perez@grupodmi.com.mx"];
+		$data = $_data['data'];
+		$module = $_data['module'];
+
+		dispatch(new \App\Jobs\SendEmailJob($mails, $data, $module))->afterResponse();
+
+	}
+
+	public function notificationUnsentPayroll($_data){
+		$mails = $_data['to_email'];
+		$data = $_data['data'];
+		$module = $_data['module'];
+
+		dispatch(new \App\Jobs\SendEmailJob($mails, $data, $module))->afterResponse();
+	}
+
+	public function sendNotificationMailBossIncidentProcess($_data){
+		$mails = $_data['to_email'];
+		$data = $_data['data'];
+		$module = $_data['module'];
+
+		dispatch(new \App\Jobs\SendEmailJob($mails, $data, $module))->afterResponse();
 	}
 }

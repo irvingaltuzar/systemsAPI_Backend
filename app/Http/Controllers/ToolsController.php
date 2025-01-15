@@ -18,9 +18,9 @@ class ToolsController extends Controller
 		$this->apiRestService = $apiRestService;
 	}
 
-    public function getPayroll(int $year)
+    public function getPayroll(int $year,$_rfc = null)
 	{
-		$payroll = $this->intelisisService->getPayroll($year);
+		$payroll = $this->intelisisService->getPayroll($year,$_rfc);
 
 		return response()->json($payroll);
 	}

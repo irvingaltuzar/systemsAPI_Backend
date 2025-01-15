@@ -37,9 +37,9 @@ class PersonalIntelisis extends Model
 	// 				->where('status','ALTA');
 	// }
 	public function commanding_staff(){
-		return $this->hasMany(PersonalIntelisis::class,'top_plaza_id','plaza_id')
-					->with('commanding_staff')
-					->where('status','ALTA');
+		return $this->hasMany(VwDmiPersonalPlaza::class,'top_plaza_id','plaza_id')
+					->with('commanding_staff');
+
 	}
 
 	// public function commanding_staff_all(){
@@ -72,9 +72,8 @@ class PersonalIntelisis extends Model
 	}
 
 	public function get_higher(){
-		return $this->hasOne(PersonalIntelisis::class,'plaza_id','top_plaza_id')
+		return $this->hasOne(VwDmiPersonalPlaza::class,'plaza_id','top_plaza_id')
 					->with('get_higher')
-					->where('status','ALTA')
 					->where('plaza_id','!=','');
 	}
 	public function get_higher_cop(){

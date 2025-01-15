@@ -420,11 +420,17 @@ class VacationController extends Controller
                                         $record->save();
 
 										// Se registra las vacaciones en intelisis y se guarda el número de movimiento de intelisis al que pertenece
-                                        $insert_incidence = $this->sendVacationIntelisis($record);
+										$saldo_inicial=0;
+                                        try {
+											$saldo_inicial = intval($this->IntelisisRepository->getDaysTakenVacation($record->personal_intelisis->personal_id)[0]->Cantidad);
+										} catch (\Throwable $th) {
+											//throw $th;
+										}
+										$insert_incidence = $this->sendVacationIntelisis($record);
 										$record->mov_intelisis = $insert_incidence;
 										$record->save();
 
-                                        $this->generarPDFRecord($request->record_id);
+                                        $this->generarPDFRecord($request->record_id,$saldo_inicial);
                                         $this->sendConfirmationEmail($request->record_id);
 
                                     }
@@ -447,7 +453,7 @@ class VacationController extends Controller
 															"Vacaciones",
 															"Tiene una solicitud de vacaciones por firmar con folio ".$request->record_id.", consulta para mas detalles...",
 															"notification",
-															"rh/vacaciones/autorizar-vacaciones",
+															"authorisations",
 															"notification",
 															"media"
 														);
@@ -607,7 +613,7 @@ class VacationController extends Controller
 
 	}
 
-	public function generarPDFRecord($_id){
+	public function generarPDFRecord($_id,$_saldo_inicial = null){
 
 		$year = Carbon::now()->format("Y");
         $data = $this->singleRecord($_id);
@@ -617,23 +623,34 @@ class VacationController extends Controller
 		$workday = $this->GeneralFunctionsRepository->getWorkDay($data->personal_intelisis->usuario_ad);
 		$data->workday = $workday;
 
+		//Se obtienen los días actuales disponibles del colaborador
+		$saldo_inicial=0;
+		if($_saldo_inicial == null){
+			$saldo_inicial = intval($this->IntelisisRepository->getDaysTakenVacation($data->personal_intelisis->personal_id)[0]->Cantidad);
+		}else{
+			// Se cambio a obtener los días antes de enviar la incidencia, sino, 
+			//al volver a consultarlos va a mostrar el saldo inicial con los días ya descontados y estaría incorrecto, caso ticket: 51704
+			$saldo_inicial = $_saldo_inicial;
+		}
+
 		//obtener pediodos
 		$month_day = Carbon::parse($data->personal_intelisis->antiquity_date)->format('d-m');
 		$periods = explode('-',$data->period);
 		$period_text = $month_day.'-'.$periods[0].' al '.$month_day.'-'.$periods[1];
 		//return view('PDF.DMI.RRHH.vacation')->with(compact('data','period_text'));
 
-		$vacation_days_law= "";
-		if(isset($data->data_vacation_days['vacation_days_law'])){
+		$vacation_days_law= $data->personal_intelisis->total_vacation_days;
+		/*if(isset($data->data_vacation_days['vacation_days_law'])){
 			$vacation_days_law = $data->data_vacation_days['vacation_days_law'];
 		}else{
 			$vacation_days_law = $data->data_vacation_days['available_periods'][0]['vacation_days_law']->days;
-		}
+		}*/
 
         $pdf = PDF::loadView('PDF.DMI.RRHH.vacation',  [
             'data' => $data,
             'period_text' => $period_text,
-			'vacation_days_law' => $vacation_days_law
+			'vacation_days_law' => $vacation_days_law,
+			'saldo_inicial' => $saldo_inicial,
         ], [], [
             'format' => 'A4',
         ]);
@@ -894,6 +911,17 @@ class VacationController extends Controller
 											->get()
 											->pluck("location")
 											->toArray();
+
+		// Eso en caso de que el usuario no es coordinador, pero si solicitan el permiso para que pueda visualizar
+		if($exist_user_coordinador != null && $get_locations == null){
+			$info_user = PersonalIntelisis::where('usuario_ad',$exist_user_coordinador->value)->where('status','ALTA')->first();
+			if($info_user != null){
+				$get_locations = [$info_user->location];
+			}else{
+				$get_locations = [];
+			}
+		}
+
 		$users_location= PersonalIntelisis::whereIn('location',$get_locations)->where('status','ALTA')->whereNotNull('usuario_ad')->pluck('usuario_ad');				
 
         if((isset($search) && strlen($search) > 0) || $start_date != null || $end_date != null || $status != null){
@@ -965,6 +993,9 @@ class VacationController extends Controller
 	public function printDocumentVacation($_record_id){
 
 		$data = $this->singleRecord($_record_id);
+		
+		//Se obtienen los días actuales disponibles del colaborador
+		$saldo_inicial = intval($this->IntelisisRepository->getDaysTakenVacation($data->personal_intelisis->personal_id)[0]->Cantidad);
 
 		// Se agrega la jornada del usuario
 		$workday = $this->GeneralFunctionsRepository->getWorkDay($data->personal_intelisis->usuario_ad);
@@ -975,17 +1006,18 @@ class VacationController extends Controller
 		$periods = explode('-',$data->period);
 		$period_text = $month_day.'-'.$periods[0].' al '.$month_day.'-'.$periods[1];
 
-		$vacation_days_law= "";
-		if(isset($data->data_vacation_days['vacation_days_law'])){
+		$vacation_days_law= $data->personal_intelisis->total_vacation_days;
+		/*if(isset($data->data_vacation_days['vacation_days_law'])){
 			$vacation_days_law = $data->data_vacation_days['vacation_days_law'];
 		}else{
 			$vacation_days_law = $data->data_vacation_days['available_periods'][0]['vacation_days_law']->days;
-		}
+		}*/
 
         $pdf = PDF::loadView('PDF.DMI.RRHH.vacation',  [
             'data' => $data,
             'period_text' => $period_text,
-			'vacation_days_law' => $vacation_days_law
+			'vacation_days_law' => $vacation_days_law,
+			'saldo_inicial' => $saldo_inicial,
         ], [], [
             'format' => 'A4',
         ]);

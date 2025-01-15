@@ -29,6 +29,8 @@ class StoreEAccountingRequest extends FormRequest
 			'id_transaction' => 'required',
 			'yearly' => 'required',
 			'e_accounting_status' => 'required',
+			'month' => 'required',
+			'year' => 'numeric|required|min:1950|max:2300',
         ];
     }
 
@@ -40,6 +42,8 @@ class StoreEAccountingRequest extends FormRequest
 			'id_transaction' => 'folio de transacción',
 			'e_accounting_status' => 'estatus',
 			'yearly' => 'anual',
+			'month' => 'mes',
+			'year' => 'año',
 		];
 	}
 }

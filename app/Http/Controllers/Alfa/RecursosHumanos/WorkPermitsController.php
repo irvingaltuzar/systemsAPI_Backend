@@ -234,6 +234,7 @@ class WorkPermitsController extends Controller
 													->where('dmirh_permit_concepts_id',$permit_concept->id)
 													->where('personal_intelisis_usuario_ad',$_request_workpermit->personal_intelisis_usuario_ad)
 													->whereIn('status',['solicitado','autorizado'])
+													->whereYear('date_request',Carbon::now()->format('Y'))
 													->get();
 			if(sizeof($work_permit_nuptials) >= 3){
 				$validations++;
@@ -496,7 +497,7 @@ class WorkPermitsController extends Controller
 															"Permisos",
 															"Tiene una solicitud de permisos por firmar con folio ".$request->work_permit_id.", consulta para mas detalles...",
 															"notification",
-															"rh/permisos-trabajo/autorizar-permisos",
+															"authorisations",
 															"notification",
 															"media"
 														);

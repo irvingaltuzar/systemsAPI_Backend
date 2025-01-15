@@ -118,6 +118,12 @@ class RecursosHumanosController extends Controller
 						$newProcedure->value = $personal_intelisis->usuario_ad;
 						$newProcedure->save();
 
+						$newProcedure = new DmiControlProcedureValidation();
+						$newProcedure->seg_seccion_name= "cai";
+						$newProcedure->key= "CAI_incident_proccess_coordinador_rr_hh-usuario_ad";
+						$newProcedure->value = $personal_intelisis->usuario_ad;
+						$newProcedure->save();
+
 
 
 						return ["success" => 1, "data"=> $newRecord];
@@ -152,6 +158,9 @@ class RecursosHumanosController extends Controller
 																	->where('value',$control_process->usuario)
 																	->delete();
 			$pv_vacation = DmiControlProcedureValidation::where("key","WorkPermit_general_report_coordinador_rr_hh-usuario_ad")
+																	->where('value',$control_process->usuario)
+																	->delete();
+			$pv_vacation = DmiControlProcedureValidation::where("key","CAI_incident_proccess_coordinador_rr_hh-usuario_ad")
 																	->where('value',$control_process->usuario)
 																	->delete();
 

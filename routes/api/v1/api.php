@@ -54,7 +54,29 @@ use Illuminate\Support\Facades\Route;
 //         Route::get('benefits','Xamarin\BenefitsController@index');
 //     });
 // });
+// Route::get('/getCountries','Alfa\Proveedores\SupplierRegistrationController@getCountries');
+// Route::group(['middleware' => ['auth:sanctum']], function () {
+// 	Route::get('/getCountries','Alfa\Proveedores\SupplierRegistrationController@getCountries');
 
+// });
+
+// Route::middleware('auth:sanctum')->get('/getCountries','Alfa\Proveedores\SupplierRegistrationController@getCountries');
+Route::post('/login', 'Auth\AuthController@loginApi');
+// Route::post('/check-token', 'Auth\AuthController@checkToken');
+Route::middleware(['auth:sanctum'])->group(function () {
+	Route::get('/getCountries','Alfa\Proveedores\SupplierRegistrationController@getCountries');
+	Route::post('/getStatesbyCountry','Alfa\Proveedores\SupplierRegistrationController@getStatesbyCountry');
+	Route::get('/getBanks','Alfa\Proveedores\SupplierRegistrationController@getBanks');
+	Route::post('/ExistRFC','Alfa\Proveedores\SupplierRegistrationController@ExistRFC');
+	Route::get('/getSpecialities','Alfa\Proveedores\SupplierRegistrationController@getSpecialities');
+	Route::post('/DeleteSupplierWeb','Alfa\Proveedores\SupplierRegistrationController@DeleteSupplierWeb');
+    Route::post('/DeleteFilesSupplierWeb','Alfa\Proveedores\SupplierRegistrationController@DeleteFilesSupplierWeb');
+	Route::post('/addSupplierWeb','Alfa\Proveedores\SupplierRegistrationController@addSupplierWeb');
+  });
+
+  Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
 Route::prefix('/user')->group(function() {
 	Route::get('/check-token/{id}', 'ApiLoginController@checkToken');
 	Route::post('/login', 'ApiLoginController@login');
@@ -64,10 +86,12 @@ Route::prefix('/test')->middleware('auth:api')->group(function() {
 	Route::get('/any', 'ApiLoginController@test');
 });
 
-
 Route::group(['middleware' =>['verifyBearerToken']],function(){
 	Route::prefix('/rrhh')->group(function() {
 		Route::post('assist-control/last-check', 'Alfa\RecursosHumanos\ReporteAsistenciaController@lastCheck');
 	});
+});
+Route::middleware('auth:api')->get('/user', function (Request $request) {
+    return $request->user();
 });
 

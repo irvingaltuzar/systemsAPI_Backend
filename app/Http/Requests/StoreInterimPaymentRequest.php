@@ -30,6 +30,8 @@ class StoreInterimPaymentRequest extends FormRequest
 			'dyp_date' => 'required|date',
 			'dyp_id_transaction' => 'required',
 			'yearly' => 'required',
+            'month' => 'required',
+			'year' => 'numeric|required|min:1950|max:2300',
         ];
     }
 
@@ -37,11 +39,13 @@ class StoreInterimPaymentRequest extends FormRequest
 	{
 		return [
 			'company_id' => 'empresa',
-			'diot_date' => 'fecha de solicitud de DIOT',
+			'diot_date' => 'fecha de presentación de DIOT',
 			'diot_id_transaction' => 'folio de transacción de DIOT',
 
-			'dyp_date' => 'fecha de solicitud de DIOT',
+			'dyp_date' => 'fecha de presentación de DIOT',
 			'dyp_id_transaction' => 'folio de transacción de DIOT',
+            'month' => 'mes',
+			'year' => 'año',
 		];
 	}
 }

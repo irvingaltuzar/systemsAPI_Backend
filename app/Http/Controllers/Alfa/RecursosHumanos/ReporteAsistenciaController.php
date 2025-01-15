@@ -13,6 +13,8 @@ use App\Models\DmiRh\DmirhAttendancePolicy as AttendancePolicy;
 use App\Models\DmiRh\DmirhPersonalTimeDetail as PersonalTimeDetail;
 use App\Models\DmiRh\DmirhPersonalTimeComment as PersonalTimeComment;
 use App\Models\DmiRh\DmirhPersonalJustification as PersonalJustification;
+use App\Models\DmiRh\DmirhIncidentReport;
+use App\Models\DmiRh\DmirhIncidentReportDetail;
 use App\Models\DmiRh\DmirhWorkPermit as WorkPermit;
 use App\Models\DmiRh\DmirhVacation as Vacation;
 use App\Models\DmiRh\DmirhCatTimeStatus as CatTimeStatus;
@@ -20,9 +22,10 @@ use App\Models\CatDaysOff;
 use DateTime;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+
 class ReporteAsistenciaController extends Controller
 {
-    protected function getReporteAsistencia(Request $request){
+    public function getReporteAsistencia(Request $request){
 
         $datos= $this->validate(request(),[
         
@@ -39,10 +42,19 @@ class ReporteAsistenciaController extends Controller
             $retardo="";
             $susp="";
             try {
-                //code...
+                //code..t
           
     foreach ( $arrayUbicacion as $value) {
-        $personal = PersonalIntelisis::where('location',$value)->where('status','ALTA')->orderby('name')->get();
+
+        if(isset($request->payment_period)){
+            $personal = PersonalIntelisis::where('location',$value)->where('status','ALTA')
+                                            ->where('payment_period',$request->payment_period)
+                                            ->orderby('name')
+                                            ->get();
+        }else{
+            $personal = PersonalIntelisis::where('location',$value)->where('status','ALTA')->orderby('name')->get();
+        }
+        
         $policy = AttendancePolicy::where('location',$value)->first();
 
                 $tol= '+'.$policy->tolerance.' minute';
@@ -54,10 +66,8 @@ class ReporteAsistenciaController extends Controller
             if($inicio> $fin){
                 $inicio=$arrayFechas[0];
             }
-            $arrayCheck= $this->Fecha_Checada_All($inicio,$fin,$pers->previous_personal_id,$pers->rfc);
-            // dd($arrayChec);
-            // exit;
-            // return response()->json($arrayChec,200);
+            $arrayCheck= $this->Fecha_Checada_All($inicio,$fin,$pers->personal_id,$pers->rfc);
+
             while($inicio <= $fin){
              $array=[];
              $arrayChec=[];
@@ -101,9 +111,6 @@ class ReporteAsistenciaController extends Controller
                }
             }
 
-            //    return response()->json($arrayCheck,200);
-            // exit;
-                // $arrayChec= $this->Fecha_Checada($inicio,$pers->previous_personal_id);
                 $dia_fecha = date("N",strtotime($inicio));
                 $nDia= $dia_fecha;
                 $stjornada="";
@@ -126,7 +133,6 @@ class ReporteAsistenciaController extends Controller
                 $fulljorn="";
                 $exc="";
                 //Obtenemos la informacion de horario  del empleado
-                // $personal_time= PersonalTime::where('user',$pers->usuario_ad)->where('active',1)->first();
                 $personal_time= PersonalTime::where('user',$pers->usuario_ad)->where('dmirh_cat_time_status_id',1)->where("start_date","<=",$inicio)
                 ->where(function ($query) {
                     $query->where('active', '=', 1)
@@ -141,14 +147,7 @@ class ReporteAsistenciaController extends Controller
                     //Asignacion hora y salida de empleado
                 $daysoff= CatDaysOff::where("date",$inicio)->first();
 
-                // if($daysoff!= null){
-                //     $entry_hour = Carbon::parse("08:00:00")->format('H:i');
-                //     $exit_hour = Carbon::parse("15:00:00")->format('H:i');
-                //     $exit_food = "";
-                //     $entry_food = "";
-                //     $exit_food_tol=date('H:i:s',strtotime("-60 minute", strtotime($exit_food)));
-                //     $entry_food_tol=date('H:i:s',strtotime("+60 minute", strtotime($entry_food)));
-                // }else{
+
                     if($daysoff!=null){
                         $exc="Viernes de Puente\n";
                     }
@@ -159,9 +158,7 @@ class ReporteAsistenciaController extends Controller
                     $entry_food = Carbon::parse($time_detail->entry_food_hour)->format('H:i');
                     $exit_food_tol=date('H:i:s',strtotime("-60 minute", strtotime($exit_food)));
                     $entry_food_tol=date('H:i:s',strtotime("+60 minute", strtotime($entry_food)));
-                // }
-             
-                // $exit_food_tole=new DateTime($exit_food_tol);
+
              //validamos la checadas en attendance    
                 if($arrayChec){
                     if(count($arrayChec)==1){
@@ -180,11 +177,7 @@ class ReporteAsistenciaController extends Controller
                     $entry_tol=date('H:i:s',strtotime("+60 minute", strtotime($hora_entrada)));
                     $exit_tol=date('H:i:s',strtotime("-30 minute", strtotime($hora_salida)));
                     $arrFoods=[];
-                    // foreach ($arrayChec as $key => $hour) {
-                    //     if($hour>=  $exit_food_tol && $hour <= $entry_food_tol){
-                    //         array_push($arrFoods,$hour);
-                    //     }
-                    // }
+
                     if(count($arrayChec)>=4){
                         $msg="Registros Completos";
                     }else{
@@ -255,7 +248,7 @@ class ReporteAsistenciaController extends Controller
                         $time_extra=new DateTime($time_trabajado);
                         $trabajado= new DateTime($fulljorn);
                         $trabajado_tole= new DateTime("08:11:00");
-                        // $extra=($time_extra> $trabajado_tole)?"Extra":(($time_extra<$trabajado)?"Incompleta":"Completa");
+
                         $extra=(($time_extra<$trabajado)?"Jornada Incompleta":"Jornada Completa");
                         $difWork=$trabajado->diff($time_extra)->format('%R%H:%I:%S');
 
@@ -263,16 +256,6 @@ class ReporteAsistenciaController extends Controller
                         //validacion Horario para en caso contrario aumentar tiempo de entrada/salida
                         // $tope="09:30";
                         
-                        // if($entry_hour=="08:00" || $entry_hour=="08:30" || $entry_hour=="09:00"){
-                        //  while ($h_ent > new DateTime($entry_hour) ) {
-                        //     if( $h_ent <= new DateTime($tope)){
-                        //         $entry_hour= date('H:i', strtotime('+30 minutes',strtotime($entry_hour)));
-                        //         $exit_hour= date('H:i', strtotime('+30 minutes',strtotime($exit_hour)));
-                        //     }else{
-                        //         break;
-                        //     }
-                        //  }
-                        // }
                 }
                 
                
@@ -334,6 +317,8 @@ class ReporteAsistenciaController extends Controller
                     
                     array_push($objReporte,(object)[
                         "personal_id" => $pers->personal_id,
+                        "rfc" => $pers->rfc,
+                        "usuario_ad" => $pers->usuario_ad,
                         "previous_personal_id" => $pers->previous_personal_id,
                         "deparment" => $pers->deparment,
                         "location" => $pers->location,
@@ -405,7 +390,7 @@ class ReporteAsistenciaController extends Controller
             $punt= '+'.$policy->puntuality.' minute';
             $susp= '+'.$policy->suspension.' minute';
             $retardo= '+'.$policy->delay.' minute';
-            $arrayCheck= $this->getAsistenciaMes($datos["date"],$personal->previous_personal_id,$personal->rfc);
+            $arrayCheck= $this->getAsistenciaMes($datos["date"],$personal->personal_id,$personal->rfc);
             // 
             // foreach($arrayChec as $check){
             //     $inicio=$check->fecha;
@@ -767,7 +752,7 @@ class ReporteAsistenciaController extends Controller
                 $susp= '+'.$policy->suspension.' minute';
                 $retardo= '+'.$policy->delay.' minute';
 
-            $arrayCheck= $this->Fecha_Checada_All($inicio,$fin,$pers->previous_personal_id,$pers->rfc);
+            $arrayCheck= $this->Fecha_Checada_All($inicio,$fin,$pers->personal_id,$pers->rfc);
             while($inicio <= $fin){
                 $array=[];
              $arrayChec=[];
@@ -1135,6 +1120,7 @@ class ReporteAsistenciaController extends Controller
             where  c.SSN like '".$rfc."'
             and c.CHECKTIME BETWEEN  '$fecha 00:00:00:000' AND '$fin 23:59:59:999'
             order by fecha,checada asc";
+            //dd($newQuery);
 
         // $sql_horario = "select 
         //         (CONVERT(VARCHAR(50), (CONVERT(DATE, c.CHECKTIME, 121)),121)) as fecha,
@@ -1150,6 +1136,7 @@ class ReporteAsistenciaController extends Controller
         $stmt2 = sqlsrv_query( $conn_checador, $newQueryRFC );
         $arr = array();
         $arr2 = array();
+        $mergedArray = array();
         if( $stmt === false ) {
             if( ($errors = sqlsrv_errors() ) != null) {
                 foreach( $errors as $error ) {

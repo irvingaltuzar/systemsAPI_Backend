@@ -15,6 +15,8 @@ use App\Models\DmiRh\DmirhPersonalTime;
 use Carbon\Carbon;
 use App\Models\PersonalIntelisis as PersonalIntelisis;
 use App\Models\DmiRh\DmirhPersonalTimeDetail;
+use App\Models\DmiControlUserSettings;
+
 class UsuariosController extends Controller
 {
     protected function getUsuarios(){
@@ -362,6 +364,54 @@ class UsuariosController extends Controller
 
         return response()->json(['error'=>'No tienes Sesion'],200);
         }
+    }
+
+    public function getListUserSettings($_rfc){
+        if(Auth::check()){
+
+            $user_settings = DmiControlUserSettings::where('module','like','user_settings')
+                                                    ->where('value',$_rfc)
+                                                    ->get();
+
+            return response()->json([
+                'success' => 1,
+                'data' => $user_settings,
+                'message' => ""
+            ],200);
+        }else{
+            return response()->json([
+                'success' => 0,
+                'message' => "No has iniciado sesión"
+            ],200);
+        }
+    }
+
+    public function excludeIncidentProcess(Request $request){
+
+        $setting = DmiControlUserSettings::where('key','incident_process-exclude_user-rfc')
+                                            ->where('value',$request->rfc)
+                                            ->first();
+
+        if($setting != null){
+            $setting->data = $request->status;
+            $setting->save();
+        }else{
+            $setting = new DmiControlUserSettings();
+            $setting->module = "user_settings";
+            $setting->key = "incident_process-exclude_user-rfc";
+            $setting->value = $request->rfc;
+            $setting->data = $request->status;
+            $setting->save();
+        }
+        
+        
+
+        return response()->json([
+            'success' => 1,
+            'data' => $setting,
+            'message' => ""
+        ],200);
+
     }
 
 

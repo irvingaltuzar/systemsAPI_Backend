@@ -24,4 +24,9 @@ class VwDmiPersonalPlaza extends Model
 		return $this->hasMany(VwDmiPersonalPlaza::class,'top_plaza_id','plaza_id')
         ->with('staffall');
 	}
+
+	public function get_higher(){
+		return $this->hasOne(VwDmiPersonalPlaza::class,'plaza_id','top_plaza_id')
+					->with('get_higher');
+	}
 }

@@ -41,18 +41,48 @@ class NotificationCenterController extends Controller
     }
 
     protected function countNotification(){
+		if(Auth::check()){
+            $user = Auth::user()->usuario;
+			$not_new= NotificationCenter::where("usuario_ad",$user)->where("read_status",0)->where("type","notification")->count();
+			$not_new1= NotificationCenter::where("read_status",0)->where("type","system")->count();
+			$tot=  $not_new +  $not_new1;
+
+			$data= array(
+				"new" => $not_new,
+				"total" => $tot,
+				"msg" => $not_new1
+			 );
+
+			return response()->json($data,200);
+        }else{
+            $data= array(
+				"new" => 0,
+				"total" => 0,
+				"msg" => 0
+			 );
+
+			return response()->json($data,200);
+
+        }
+            
+    }
+
+    protected function viewAllNotifications(Request $request){
         $user = Auth::user()->usuario;
-        $not_new= NotificationCenter::where("usuario_ad",$user)->where("read_status",0)->where("type","notification")->count();
-        $not_new1= NotificationCenter::where("archived",0)->where("type","system")->count();
-        $tot=  $not_new +  $not_new1;
 
-        $data= array(
-            "new" => $not_new,
-            "total" => $tot,
-            "msg" => $not_new1
-         );
+        $notifications = NotificationCenter::where("usuario_ad",$user)->where("read_status",0)
+                                            ->where("type","notification")
+                                            ->update([
+                                                "read_status" => 1
+                                            ]);
 
-        return response()->json($data,200);    
+        $update = NotificationCenter::where("usuario_ad",$user)->where("read_status",0)
+                                            ->where("type","system")
+                                            ->update([
+                                                "read_status" => 1
+                                            ]);
+
+        return response()->json(['success'=>'correcto'],200);    
     }
 
     public function addNotificationCenter($usuario_ad,$title,$msg,$type,$link,$icon,$priority){

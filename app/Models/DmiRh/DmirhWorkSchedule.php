@@ -25,9 +25,9 @@ class DmirhWorkSchedule extends Model
 {
 	protected $table = 'dmirh_work_schedules';
 
-	protected $dates = [
+	/* protected $dates = [
 		'hour'
-	];
+	]; */
 
 	protected $fillable = [
 		'hour',

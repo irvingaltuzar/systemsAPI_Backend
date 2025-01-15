@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 class AuthController extends Controller
 {
   public function __construct(){
-    $this->middleware('guest',['only'=>'ShowLogin']);
+    // $this->middleware('guest',['only'=>'ShowLogin']);
   }
   public function username() {
     return 'usuario';
@@ -47,7 +47,7 @@ public function password() {
                $user = Auth::user();
               $tokenResult = $user->createToken('Personal Access Token')->accessToken;
               return response()->json([
-                'user'=>Auth::user(),
+                // 'user'=>Auth::user(),
                 'access_token' =>   $tokenResult,
                   200]);
           } else{
@@ -64,7 +64,30 @@ public function password() {
     }
   }
 
-  
+  public function loginAPI(Request $request)
+  {
+
+    $credentials = $request->only($this->username(), $this->password());
+    $username = $credentials[$this->username()];
+    $password = $credentials[$this->password()];
+
+    // $credentials = request(['usuario','password']);
+    if(!Auth::attempt($credentials))
+    {
+    return response()->json([
+        'message' => 'Unauthorized'
+    ],401);
+    }
+
+    $user = $request->user();
+    $tokenResult = $user->createToken('Personal Access Token');
+    $token = $tokenResult->plainTextToken;
+
+    return response()->json([
+    'accessToken' =>$token,
+    'token_type' => 'Bearer',
+    ]);
+}
     /**
      * Obtener el objeto User como json
      */
@@ -126,7 +149,25 @@ public function password() {
     }
      return Redirect::to("login")->withSuccess('Opps! You do not have access');
   }
+  public function checkToken(Request $request)
+	{
+		$is_validate = DB::connection('intranet_sqlsrv')->table('personal_access_token')
+					->where(['token' => $request->token])
+					->where('is_expired', false)
+					->whereNull('deleted_at')
+					->first();
 
+		if ($is_validate) {
+			return response()->json([
+				'is_validate' => true,
+				'data_json' => $is_validate
+			]);
+		} else {
+			return response()->json([
+				'is_validate' => false
+			]);
+		}
+	}
 public function create(array $data)
 {
  return User::create([

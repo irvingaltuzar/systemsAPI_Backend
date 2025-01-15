@@ -130,6 +130,24 @@ return [
                 'PWD' => env('DB_PASSWORD', ''),
             ],
         ],
+        'erp_6000_pruebas' => [
+            'driver' => 'sqlsrv',
+            'host' => env('ERP_6000P_HOST', 'localhost'),
+            'port' => env('ERP_6000P_PORT', '1433'),
+            'database' => env('ERP_6000P_DATABASE', 'forge'),
+            'charset' => 'utf8',
+            'prefix' => '',
+			'Encrypt' => false,
+			'TrustServerCertificate' => true,
+            'trusted_connection' => 'yes', // Agrega esto
+            'prefix_indexes' => true,
+			'pooling'  => false,
+            'options' => [
+                'Authentication' => 'ActiveDirectoryPassword',
+                'UID' => env('ERP_6000P_USERNAME', ''),
+                'PWD' => env('ERP_6000P_PASSWORD', ''),
+            ],
+        ],
 		'alfa_sqlsrv' => [
             'driver' => 'sqlsrv',
             'host' => env('INTRANET_HOST', 'localhost'),

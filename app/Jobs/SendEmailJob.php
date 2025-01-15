@@ -18,13 +18,20 @@ use App\Mail\SupplierEditMail;
 use App\Mail\RRHH\WorkPermitMail;
 use App\Mail\RRHH\WorkPermitNotificationRRHHMail;
 use App\Mail\RRHH\VacationMail;
+use App\Mail\RRHH\JustificationMail;
+use App\Mail\RRHH\WorkScheduleMail;
 use App\Mail\SupplierApproved;
 use App\Mail\SupplierCanceled;
 use App\Mail\SupplierRemoved;
+use App\Mail\SupplierApprovedProcore;
+use App\Mail\SupplierCanceledProcore;
+use App\Mail\SupplierRemovedProcore;
 use App\Mail\signRequisitionMail;
 use App\Mail\validateRequisitionMail;
 use App\Mail\cancelRequisitionMail;
 use App\Mail\autorizeRequisitionMail;
+use App\Mail\Payroll\NotificationUnsentPayroll;
+use App\Mail\RRHH\NotificationIncidentProcessMail;
 
 class SendEmailJob implements ShouldQueue
 {
@@ -61,6 +68,9 @@ class SendEmailJob implements ShouldQueue
 		}else if($this->type === "vacation"){
 			Mail::to($this->email_list)
 				->send(new VacationMail($this->data));
+		}else if($this->type === "justification"){
+			Mail::to($this->email_list)
+				->send(new JustificationMail($this->data));
 		}
 
 		if ($this->type === "efo") {
@@ -86,17 +96,33 @@ class SendEmailJob implements ShouldQueue
 					->send(new SupplierCanceled($this->data));
 			}
 		}
+		if ($this->type == "cancel_Procore") {
+			if ($this->email_list['second_mails'][0] != null) {
+				Mail::to($this->email_list['main_mails'])
+					->cc($this->email_list['second_mails'])
+					->send(new SupplierCanceledProcore($this->data));
+			} else {
+				Mail::to($this->email_list['main_mails'])
+					->send(new SupplierCanceledProcore($this->data));
+			}
+		}
 
 		if ($this->type == "approve") {
 				Mail::to($this->email_list['main_mails'])
 					->send(new SupplierApproved($this->data));
 		}
-
+		if ($this->type == "approve_Procore") {
+			Mail::to($this->email_list['main_mails'])
+				->send(new SupplierApprovedProcore($this->data));
+		}
 		if ($this->type == "remove") {
 			Mail::to($this->email_list['main_mails'])
 				->send(new SupplierRemoved($this->data));
 		}
-
+		if ($this->type == "remove_Procore") {
+			Mail::to($this->email_list['main_mails'])
+				->send(new SupplierRemovedProcore($this->data));
+		}
 		if ($this->type == "next_signer") {
 			Mail::to($this->email_list)
 				->send(new NextSignerMail($this->data));
@@ -123,6 +149,19 @@ class SendEmailJob implements ShouldQueue
 		if ($this->type == "autorize_requisition") {
 			Mail::to($this->email_list)
 				->send(new autorizeRequisitionMail($this->data));
+		}
+		if ($this->type == "control_horarios") {
+			Mail::to($this->email_list)
+				->send(new WorkScheduleMail($this->data));
+		}
+		if ($this->type == "whatsapp_notification") {
+			Mail::to($this->email_list)
+				->send(new NotificationUnsentPayroll($this->data));
+		}
+
+		if ($this->type == "process_incident_notification") {
+			Mail::to($this->email_list)
+				->send(new NotificationIncidentProcessMail($this->data));
 		}
     }
 }

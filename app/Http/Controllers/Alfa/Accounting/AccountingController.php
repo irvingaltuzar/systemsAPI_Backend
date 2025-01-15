@@ -18,6 +18,7 @@ use App\Models\DmiAccgInterimPayments;
 use App\Models\DmiEAccounting;
 use App\Models\DmiOverviewActivities;
 use App\Repositories\ToolsRepository;
+use App\Models\DmiControlProcedureValidation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -93,7 +94,7 @@ class AccountingController extends Controller
 
         $search = isset($request->search) ? $request->search : '';
 
-		if ($month == '14') {
+		if ($month == '00') {
 			if(isset($search) && strlen($search) > 0){
 
 				$electronic_accounting = DmiEAccounting::with(['company'])
@@ -122,7 +123,7 @@ class AccountingController extends Controller
 											)
 											->where(
 												function ($q) use ($year, $month){
-													return $q->whereYear('date', ($year + 1));
+													return $q->where('year', ($year));
 												}
 											)
 											->where(
@@ -133,12 +134,15 @@ class AccountingController extends Controller
 											->Paginate($limit);
 			}else{
 				$electronic_accounting = DmiEAccounting::with(['company'])
-											->whereYear('date', ($year + 1))
-											->orderBy('date', $order_by)
+											->whereYear('year', ($year))
+											->orderBy('id', $order_by)
 											->where('is_yearly', true)
 											->Paginate($limit);
 			}
 		} else {
+
+			
+
 			if(isset($search) && strlen($search) > 0){
 
 				$electronic_accounting = DmiEAccounting::with(['company'])
@@ -167,16 +171,16 @@ class AccountingController extends Controller
 											)
 											->where(
 												function ($q) use ($year, $month){
-													return $q->whereYear('date', $year)
-																->whereMonth('date', $month + 1);
+													return $q->where('year', $year)
+																->where('month', $month);
 												}
 											)
 											->Paginate($limit);
 			}else{
 				$electronic_accounting = DmiEAccounting::with(['company'])
-											->whereMonth('date', $month + 1)
-											->whereYear('date', $year)
-											->orderBy('date', $order_by)
+											->where('month', $month)
+											->where('year', $year)
+											->orderBy('id', $order_by)
 											->Paginate($limit);
 
 			}
@@ -186,7 +190,7 @@ class AccountingController extends Controller
 
         return $electronic_accounting;
 	}
-
+    
     public function fetchOverviewsAccounting(Request $request)
 	{
 
@@ -238,8 +242,10 @@ class AccountingController extends Controller
 	{
 		$year = isset($request->year) ? $request->year : Carbon::parse(Carbon::now())->format("Y");
 
-		$month = isset($request->month) ? ($request->month + 1) : Carbon::now();
+		$flag_is_yearly= $request->month == '00' ? true : false;
 
+		$month = isset($request->month) ? ($request->month) : Carbon::now();
+		
         $order_by = isset($request->order_by) ? $request->order_by : 'asc';
 
         $limit = (isset($request->limit) && $request->limit > 0) ? $request->limit : '20';
@@ -268,25 +274,42 @@ class AccountingController extends Controller
 															->orWhere('diot_id_transaction_receipt', 'like', "%$search%")
 															->orWhere('dyp_id_transaction_receipt', 'like', "%$search%");
 											}
-										)
-										->where(
-											function ($q) use ($year, $month){
-												return $q->whereYear('diot_date', $year)
-															->whereMonth('diot_date', $month);
-											}
-										)
-										->Paginate($limit);
+										);
+
+										if($flag_is_yearly == false){
+											$interim = $interim->where(
+												function ($q) use ($year, $month){
+													return $q->where('year', $year)
+																->where('month', $month); 
+												}
+											)
+											->Paginate($limit);
+										}else{
+											$interim = $interim->where(
+												function ($q) use ($year, $month){
+													return $q->where('year', $year)
+																->where('is_yearly',1);
+												}
+											)
+											->Paginate($limit);
+										}
+										
 
         }else{
-
-			$interim = DmiAccgInterimPayments::with(['company'])
+			return DmiAccgInterimPayments::with(['company'])
 							->where(
-								function ($q) use ($year, $month){
-									return $q->whereYear('diot_date', $year)
-												->whereMonth('diot_date', $month);
+								function ($q) use ($year, $month, $flag_is_yearly){
+									if($flag_is_yearly == false){
+										return $q->where('year', $year)
+												->where('month', $month);
+									}else{
+										return $q->where('year', $year)
+												->where('is_yearly',1);
+									}
+
 								}
 							)
-							->orderBy('diot_date', $order_by)
+							->orderBy('id', $order_by)
 							->Paginate($limit);
         }
 
@@ -301,6 +324,18 @@ class AccountingController extends Controller
 		$personal = $this->personalRepository->getAccountantPersonal();
 
 		return response()->json($personal);
+	}
+
+	public function UsersAsPersonal()
+	{
+		$users = DmiControlProcedureValidation::join('personal_intelisis','personal_intelisis.usuario_ad','=','dmicontrol_procedure_validation.value')
+												->where('dmicontrol_procedure_validation.key',"accounting_administration_add_as_manager-usuario_ad")
+												->where('personal_intelisis.status',"ALTA")
+												->whereNull('dmicontrol_procedure_validation.deleted_at')
+												->select('personal_intelisis.*')
+												->get();
+
+		return response()->json($users);
 	}
 
 	public function getTools()
@@ -336,7 +371,9 @@ class AccountingController extends Controller
 						'cat_e_accounting_status_id' => $request['e_accounting_status'],
 						'date' => $request['date'],
 						'id_transaction_receipt' => $request['id_transaction'],
-						'is_yearly' => $request['yearly'],
+						'is_yearly' => $request['month'] == '13' ? true : false,
+						'month' => $request['month'] == '13' ? '00' : $request['month'],
+						'year' => $request['year'],
 					]);
 
 		return response()->json($company);
@@ -362,7 +399,9 @@ class AccountingController extends Controller
 			'diot_id_transaction_receipt' => $request['diot_id_transaction'],
 			'dyp_date' => $request['dyp_date'],
 			'dyp_id_transaction_receipt' => $request['dyp_id_transaction'],
-			'is_yearly' => $request['yearly'],
+			'is_yearly' => $request['month'] == '13' ? true : false,
+			'month' => $request['month'] == '13' ? '00' : $request['month'],
+			'year' => $request['year'],
 		]);
 
 		return response()->json([$company]);

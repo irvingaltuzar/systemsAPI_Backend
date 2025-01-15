@@ -40,11 +40,8 @@ Route::get('test/auto','Procore\Proveedores\VendorsController@me');
 Route::get('test/RefreshToken','Procore\Proveedores\VendorsController@RefreshToken');
 Route::get('getInfo','Procore\Proveedores\VendorsController@getInfoToken');
 Route::get('redirect','Procore\Proveedores\VendorsController@callback');
-// Route::get('correo','Procore\Proveedores\VendorsController@InviteVendor');
-// Route::get('biotime','Alfa\RecursosHumanos\ReporteAsistenciaController@AddUsersBioTime');
 
 Auth::routes();
-
 
 Route::get('test/', function () {
 
@@ -66,10 +63,6 @@ Route::get('/token', function () {
 Route::get('prueba', 'Auth\LoginController@prueba');
 Route::get('test-payroll', 'ToolsController@testPayroll');
 Route::post('login', 'Auth\LoginController@login');
-// Route::get('registration', 'Auth\AuthController@registration');
-// Route::post('post-registration', 'Auth\AuthController@postRegistration');
-Route::get('index', 'InicioController@index')->name('index');
-Route::get('ldap', 'ldapController@index');
 Route::get('check', 'Auth\LoginController@check');
 Route::get('check_Permisos', 'Auth\LoginController@check_Permisos');
 Route::get('logout', 'Auth\LoginController@logout');
@@ -79,10 +72,6 @@ Route::prefix('/user')->group(function() {
 	Route::post('/login', 'ApiLoginController@login');
 });
 
-Route::get('/home', 'HomeController@index')->name('home');
-Route::get('/example', 'HomeController@example')->name('example');
-// Route::get('login', 'Auth\AuthController@ShowLogin')->name('login');
-// Route::get('logout', 'Auth\AuthController@logout')->name('logout');
 
 /************  POST peticiones  *********************/
 Route::post('post-login', 'Auth\AuthController@postLogin')->name('postlogin');
@@ -140,7 +129,7 @@ Route::get('getCatTopico', 'DocumentosController@getCatTopico');
 Route::get('getCatDocPadre', 'DocumentosController@getCatDocPadre');
 Route::get('getCmbArchivos', 'DocumentosController@getCmbArchivos');
 Route::get('getCatTipoAdjunto', 'DocumentosController@getCatTipoAdjunto');
-Route::get('/prov', 'Proveedores@consulta_proveedores')->name('prov');
+// Route::get('/prov', 'Proveedores@consulta_proveedores')->name('prov');
 Route::get('getUsuarios', 'UsuariosController@getUsuarios');
 Route::get('getUsuariosEmail', 'UsuariosController@getUsuariosEmail');
 Route::get('getSubsecciones', 'UsuariosController@getSubsecciones');
@@ -152,6 +141,7 @@ Route::get('getTitulosDocumentos', 'AuditoriaController@getTitulosDocumentosRepo
 Route::get('NotificationCenter', 'NotificationCenterController@getNotificationsUser');
 Route::post('changeStatusNotification', 'NotificationCenterController@changeStatusNotification');
 Route::get('countNotification', 'NotificationCenterController@countNotification');
+Route::get('viewAllNotifications', 'NotificationCenterController@viewAllNotifications');
 
 
 
@@ -229,6 +219,7 @@ Route::prefix('controlAsistencia')->group(function(){
 Route::get('getHorariosPersonal','Alfa\RecursosHumanos\HorariosPersonalController@getHorariosPersonal');
 Route::get('getHourEntrance','Alfa\RecursosHumanos\CambioHorarioController@getHourEntrance');
 Route::get('getHourFood','Alfa\RecursosHumanos\CambioHorarioController@getHourFood');
+Route::get('getHourEntryFood','Alfa\RecursosHumanos\CambioHorarioController@getHourEntryFood');
 Route::get('getHorarioPendiente','Alfa\RecursosHumanos\CambioHorarioController@getHorarioPendiente');
 Route::get('getHorariosMiPersonalAutorizar','Alfa\RecursosHumanos\AutorizarHorariosAreaController@getHorariosMiPersonalAutorizar');
 Route::post('getHorariosPersonalAprobar','Alfa\RecursosHumanos\PanelHorariosAprobarController@getHorariosPersonalAprobar');
@@ -241,6 +232,8 @@ Route::post('autorizarHorarioPersonal','Alfa\RecursosHumanos\AutorizarHorariosAr
 Route::post('rechazarHorarioPersonal','Alfa\RecursosHumanos\AutorizarHorariosAreaController@rechazarHorarioPersonal');
 Route::post('addCambioHorarioPersonal','Alfa\RecursosHumanos\CambioHorarioController@addCambioHorarioPersonal');
 Route::post('updateCambioHorarioPersonal','Alfa\RecursosHumanos\CambioHorarioController@updateCambioHorarioPersonal');
+Route::post('cancelCambioHorarioPersonal','Alfa\RecursosHumanos\CambioHorarioController@cancelCambioHorarioPersonal');
+Route::get('validate-rejected-quantity','Alfa\RecursosHumanos\CambioHorarioController@validateRejectedQuantity');
 Route::get('getPersonalIntelisis','Alfa\RecursosHumanos\PersonalIntelisisController@getPersonalIntelisisAll');
 Route::get('getUbications','Alfa\RecursosHumanos\PersonalIntelisisController@getUbications');
 Route::get('updatePersonalIntelisisSP','Alfa\RecursosHumanos\PersonalIntelisisController@updatePersonalIntelisisSP');
@@ -261,10 +254,12 @@ Route::post('updateDaysOff','Alfa\RecursosHumanos\ReporteAsistenciaController@up
 Route::post('updateCatTimeStatus','Alfa\RecursosHumanos\HorariosPersonalController@updateCatTimeStatus');
 Route::post('updateTypeJustification','Alfa\RecursosHumanos\JustificationController@updateTypeJustification');
 Route::post('getReporteAsistencia','Alfa\RecursosHumanos\ReporteAsistenciaController@getReporteAsistencia');
+/* Route::get('getReporteAsistencia','Alfa\RecursosHumanos\ReporteAsistenciaController@getReporteAsistencia'); */
 Route::post('getReporteAsistenciaMiPersonal','Alfa\RecursosHumanos\ReporteAsistenciaController@getReporteAsistenciaMiPersonal');
 Route::post('addJustification','Alfa\RecursosHumanos\JustificationController@addJustification');
 Route::post('addJustificationUser','Alfa\RecursosHumanos\JustificationController@addJustificationUser');
 Route::post('getPersonalAttendance','Alfa\RecursosHumanos\ReporteAsistenciaController@getPersonalAttendance');
+//Route::get('getPersonalAttendance','Alfa\RecursosHumanos\ReporteAsistenciaController@getPersonalAttendance');
 });
 
 /** Locations */
@@ -303,6 +298,7 @@ Route::group(['prefix' => 'accounting'], function () {
 	Route::post("e-accounting/graphic","Alfa\Accounting\AccountingController@getEAccountingGraphic");
 	Route::get('/fetch-overviews','Alfa\Accounting\AccountingController@fetchOverviews');
 	Route::get('/fetch-personal','Alfa\Accounting\AccountingController@fetchPersonal');
+	Route::get('/users-as-manager','Alfa\Accounting\AccountingController@UsersAsPersonal');
 	Route::get('/get-tools','Alfa\Accounting\AccountingController@getTools');
 	Route::get('/get-e-status','Alfa\Accounting\AccountingController@getEStatus');
 	Route::get('/get-cat-overviews','Alfa\Accounting\AccountingController@getCatOverviews');
@@ -386,7 +382,7 @@ Route::prefix('rh')->group(function(){
         Route::get("authorize-permit-list","Alfa\RecursosHumanos\WorkPermitsController@authorizePermitList");
         Route::get("staff-permit-list","Alfa\RecursosHumanos\WorkPermitsController@staffPermitList");
         Route::get("general-report","Alfa\RecursosHumanos\WorkPermitsController@generalReport");
-        Route::get("general-pdf","Alfa\RecursosHumanos\WorkPermitsController@generarPDFWorkPermit");
+        Route::get("generate-pdf/{id}","Alfa\RecursosHumanos\WorkPermitsController@generarPDFWorkPermit");
         Route::get("print-document/{id}","Alfa\RecursosHumanos\WorkPermitsController@printDocumentWorkPermit");
 
     });
@@ -409,6 +405,10 @@ Route::prefix('rh')->group(function(){
 
     });
 
+    Route::prefix('authorisations')->group(function(){
+        Route::get('/list',"Alfa\RecursosHumanos\AuthorisationController@list");
+    });
+
 
     /* *********************** PERSONAL INTELISIS PROFILE *********************** */
     Route::get("/personal-intelisis/profile","Alfa\RecursosHumanos\PersonalIntelisisController@getProfile");
@@ -416,11 +416,47 @@ Route::prefix('rh')->group(function(){
 
 
 
+    /* *********************** CONTROL DE ASISTENCIAS Y INCIDENCIAS *********************** */
+    Route::prefix('incident-process')->group(function () {
+        Route::post('add','Alfa\RecursosHumanos\IncidentProcessController@addIncidentProcess');
+        Route::get('list','Alfa\RecursosHumanos\IncidentProcessController@listIncidentProcess');
+        Route::get('single','Alfa\RecursosHumanos\IncidentProcessController@singleIncidentProcess');
+        Route::post('close/{id}','Alfa\RecursosHumanos\IncidentProcessController@closeIncidentProcess');
+        Route::post('cancel/{id}','Alfa\RecursosHumanos\IncidentProcessController@cancelIncidentProcess');
+        Route::get('collaboratos-contemplated/{id}','Alfa\RecursosHumanos\IncidentProcessController@collaboratosContemplated');
+        Route::get('get-preview-insert-mov-erp/{id}','Alfa\RecursosHumanos\IncidentProcessController@getInsertMovERP');
+        Route::get('send-notification/{id}','Alfa\RecursosHumanos\IncidentProcessController@sendNotification');
+        Route::get('cancel-requests','Alfa\RecursosHumanos\IncidentProcessController@cancelRequests');
+
+        Route::post('validate-incident/add-justification','Alfa\RecursosHumanos\IncidentProcessController@addJustificationIncident');
+        Route::post('validate-incident/add-multiple-justification','Alfa\RecursosHumanos\IncidentProcessController@addMultipleJustification');
+        Route::get('validate-incident/list','Alfa\RecursosHumanos\IncidentProcessController@listValidateIncident');
+        Route::get('get-number-justification','Alfa\RecursosHumanos\JustificationController@getNumberJustification');
+        
+    });
 
 
 
 
 
+});
+
+Route::prefix('whatsapp-api')->group(function (){
+    //Route::post('/message/send-text-message',"WhatsAppController@sendTextMessage");
+    Route::post('/message/send-text-message',[App\services\WhatsAppService::class, 'sendTextMessage']);
+    Route::post('/message/send-document-message',[App\services\WhatsAppService::class, 'sendDocumentMessage']);
+    Route::post('/message/send-document-url-message',[App\services\WhatsAppService::class, 'sendDocumentByURL']);
+    Route::post('/message/send-image-message',[App\services\WhatsAppService::class, 'sendImageMessage']);
+    Route::post('/message/send-template-message',[App\services\WhatsAppService::class, 'sendTemplateMessage']);
+    Route::get('/webhook-v1',[App\services\WhatsAppService::class, 'verifyWebhook']);
+    Route::post('/webhook-v1',[App\services\WhatsAppService::class, 'processWebhook']);
+    Route::post('/test-whatsapp',[App\services\WhatsAppService::class, 'getPayrollReceipt']);
+});
+
+Route::prefix('services')->group(function(){
+    Route::get("/send-payroll-receipts","WhatsAppController@sendPayrollReceipts");
+    Route::get("/run-job-send-payroll","WhatsAppController@runJobSendPayrollWhatsApp");
+    Route::get("/send-email-unsend-payroll","WhatsAppController@sendEmailUnsentPayroll");
 });
 
 Route::prefix('tools')->group(function(){
@@ -466,6 +502,7 @@ Route::prefix('personalRequisition')->group(function(){
 	Route::post('AutorizeRequisition','Alfa\PersonalRequisitions\PersonalRequisitionController@AutorizeRequisition');
 
     Route::get("generete-pdf-personal-requisition/{idRequisition}","Alfa\PersonalRequisitions\PersonalRequisitionController@apiGeneretePDFPersonalRequisition");
+    Route::get("user-who-can-validate","Alfa\PersonalRequisitions\PersonalRequisitionController@userWhoCanValidate");
 });
 
 Route::prefix('suppliers')->group(function (){
@@ -490,7 +527,7 @@ Route::prefix('suppliers')->group(function (){
     Route::get('/fetch','Alfa\Suppliers\SuppliersController@fetchSuppliers');
     Route::get('/fetch-all','Alfa\Suppliers\SuppliersController@fetchAllSuppliers');
     Route::get('/fetch-specialties','Alfa\Suppliers\SuppliersController@fetchSpecialties');
-	Route::post('/approve','Alfa\Suppliers\SuppliersController@approve');
+	Route::post('/approve','Procore\Proveedores\SuppliersWebController@approve');
 	Route::post('/reactive','Alfa\Suppliers\SuppliersController@reactive');
 	Route::post('/cancel','Alfa\Suppliers\SuppliersController@cancel');
 	Route::post('/store-specialties','Alfa\Suppliers\SuppliersController@storeSpecialties');
@@ -507,4 +544,12 @@ Route::prefix('suppliers')->group(function (){
 
 	Route::get('supplier-documents','Alfa\Suppliers\SuppliersController@getSupplierDocuments');
 	Route::get('delete-file/{document_id}','Alfa\Suppliers\SuppliersController@deleteSupplierDocument');
+});
+
+Route::prefix('/administration')->group(function(){
+    Route::prefix('/user-settings')->group(function(){
+        Route::get('/list/{rfc}',"UsuariosController@getListUserSettings");
+        Route::post('/exclude-incident-process',"UsuariosController@excludeIncidentProcess");
+    });
+    
 });

@@ -15,6 +15,7 @@ use App\Models\DmiBucketSignature;
 use App\Models\DmiCatStatusRecruitment;
 use App\Models\CatRequisitionsAdmin;
 use App\Models\DmiControlSignaturesBehalfAudit;
+use App\Models\DmiControlAuthorizationSignature;
 use Carbon\Carbon;
 use App\Models\File as MFile;
 use Illuminate\Support\Facades\File;
@@ -23,6 +24,7 @@ use PDF;
 use App\Services\SendEmailService;
 use App\Services\IntelisisSenderService;
 use App\Http\Controllers\NotificationCenterController;
+use App\Models\DmiControlProcedureValidation;
 
 class PersonalRequisitionController extends Controller
 {
@@ -341,6 +343,7 @@ class PersonalRequisitionController extends Controller
             $signature->save();
             $order++;
             }
+            // $mails[]= "irving.altuzar@grupodmi.com.mx";
             $this->sendEmail->newRequisitionNotification($data, $mails);
 
             return response()->json(['success'=>'Se ha creado solicitud de requisición.'],200);
@@ -777,7 +780,7 @@ class PersonalRequisitionController extends Controller
                 }
                                         $data = DmirhPersonalRequisition::with(['dmi_control_email_domain','dmi_cat_status_recruitment','personal_intelisis','dmi_personal_substitution'])->find($request->id);
                                         $signatures = DmiBucketSignature::with('personal_intelisis')->where('origin_record_id',$request->id)->where('seg_seccion_id',12)->orderBy("order","ASC")->orderBy("id","ASC")->get();
-                                        $signAudit= DmiControlSignaturesBehalfAudit::with('personal_intelisis_requisition')->where("origin_record_id",$request->id)->get();// $data["signatures"]=$signatures;
+                                        $signAudit= DmiControlSignaturesBehalfAudit::with('personal_intelisis')->where("origin_record_id",$request->id)->get();// $data["signatures"]=$signatures;
                                         $this->generarPDFPersonalRequisition($data, $signatures, $signAudit);
                                     }
 
@@ -800,7 +803,7 @@ class PersonalRequisitionController extends Controller
                                         "Solicitud Pendiente Firma",
                                     "La requisición ".$requisition->id." necesita de tu firma para su seguimiento",
                                     "notification",
-                                    "RequisicionesPendientesFirma",
+                                    "authorisations",
                                     "sign_request","media");
                                 }
                                 $active_sign = false;
@@ -879,11 +882,17 @@ class PersonalRequisitionController extends Controller
             })
             ->orderBy("dmirh_personal_requisition.date","desc")->get();
            }else{
+            //Se busca a que ubicaciones tiene acceso la coordinación
+            $locations = $this->getCoordinadoraRRHHLocation();
+            if($locations == null){
+                $locations = [$loc->location];
+            }
+
             $res= DmirhPersonalRequisition::with(['dmi_control_email_domain','personal_intelisis'])->join('personal_intelisis', 'personal_intelisis.usuario_ad', '=', 'dmirh_personal_requisition.user')
             ->select('dmirh_personal_requisition.*')
             ->where('personal_intelisis.status','ALTA')
             ->where("dmirh_personal_requisition.status","validacion")
-            ->where('personal_intelisis.location', $loc->location)
+            ->whereIn('personal_intelisis.location',$locations)
             ->orderBy("dmirh_personal_requisition.date","desc")->get();
            }
 
@@ -946,15 +955,21 @@ class PersonalRequisitionController extends Controller
              })
              ->orderBy("dmirh_personal_requisition.date","desc")->Paginate( $perPage =  $limite, $columns = ['*'], $pageName = 'page',$page =$pagina);
             }else{
-             $res= DmirhPersonalRequisition::with(['dmi_control_email_domain','dmi_cat_status_recruitment'])->join('personal_intelisis', 'personal_intelisis.usuario_ad', '=', 'dmirh_personal_requisition.user')
-             ->select('dmirh_personal_requisition.*')
-             ->where('personal_intelisis.status','ALTA')
-             ->where(function($query) {
-                $query->where("dmirh_personal_requisition.status","recaudar firmas")
-                ->orWhere("dmirh_personal_requisition.status","autorizada");
-            })
-             ->where('personal_intelisis.location', $loc->location)
-             ->orderBy("dmirh_personal_requisition.date","desc")->Paginate( $perPage =  $limite, $columns = ['*'], $pageName = 'page',$page =$pagina);
+                //Se busca a que ubicaciones tiene acceso la coordinación
+                $locations = $this->getCoordinadoraRRHHLocation();
+                if($locations == null){
+                    $locations = [$loc->location];
+                }
+
+                $res= DmirhPersonalRequisition::with(['dmi_control_email_domain','dmi_cat_status_recruitment'])->join('personal_intelisis', 'personal_intelisis.usuario_ad', '=', 'dmirh_personal_requisition.user')
+                ->select('dmirh_personal_requisition.*')
+                ->where('personal_intelisis.status','ALTA')
+                ->where(function($query) {
+                    $query->where("dmirh_personal_requisition.status","recaudar firmas")
+                    ->orWhere("dmirh_personal_requisition.status","autorizada");
+                })
+                ->whereIn('personal_intelisis.location',$locations)
+                ->orderBy("dmirh_personal_requisition.date","desc")->Paginate( $perPage =  $limite, $columns = ['*'], $pageName = 'page',$page =$pagina);
             }
 
          }
@@ -1005,6 +1020,12 @@ class PersonalRequisitionController extends Controller
                 })
                 ->orderBy("dmirh_personal_requisition.date","desc")->Paginate( $perPage =  $limite, $columns = ['*'], $pageName = 'page',$page =$pagina);
                }else{
+                //Se busca a que ubicaciones tiene acceso la coordinación
+                $locations = $this->getCoordinadoraRRHHLocation();
+                if($locations == null){
+                    $locations = [$loc->location];
+                }
+
                 $res= DmirhPersonalRequisition::with(['dmi_control_email_domain','dmi_cat_status_recruitment'])->join('personal_intelisis', 'personal_intelisis.usuario_ad', '=', 'dmirh_personal_requisition.user')
                 ->select('dmirh_personal_requisition.*')
                 ->where('personal_intelisis.status','ALTA')
@@ -1013,7 +1034,7 @@ class PersonalRequisitionController extends Controller
                     ->orWhere("dmirh_personal_requisition.status","cancelada")
                     ->orWhere("dmirh_personal_requisition.status","rechazada");
                 })
-                ->where('personal_intelisis.location', $loc->location)
+                ->whereIn('personal_intelisis.location',$locations)
                 ->orderBy("dmirh_personal_requisition.date","desc")->Paginate( $perPage =  $limite, $columns = ['*'], $pageName = 'page',$page =$pagina);
                }
 
@@ -1084,6 +1105,12 @@ class PersonalRequisitionController extends Controller
                })
                ->orderBy("dmirh_personal_requisition.date","desc")->Paginate(100);
               }else{
+               //Se busca a que ubicaciones tiene acceso la coordinación
+               $locations = $this->getCoordinadoraRRHHLocation();
+               if($locations == null){
+                   $locations = [$loc->location];
+               }
+                
                $res= DmirhPersonalRequisition::with(['dmi_control_email_domain','dmi_cat_status_recruitment'])->join('personal_intelisis', 'personal_intelisis.usuario_ad', '=', 'dmirh_personal_requisition.user')
                ->select('dmirh_personal_requisition.*')
                ->where('personal_intelisis.status','ALTA')
@@ -1101,7 +1128,7 @@ class PersonalRequisitionController extends Controller
                 $query->where("dmirh_personal_requisition.status","recaudar firmas")
                 ->orWhere("dmirh_personal_requisition.status","autorizada");
             })
-               ->where('personal_intelisis.location', $loc->location)
+                ->whereIn('personal_intelisis.location',$locations)
                ->orderBy("dmirh_personal_requisition.date","desc")->Paginate(100);
               }
 
@@ -1170,6 +1197,12 @@ class PersonalRequisitionController extends Controller
                })
                ->orderBy("dmirh_personal_requisition.date","desc")->Paginate(100);
               }else{
+                //Se busca a que ubicaciones tiene acceso la coordinación
+                $locations = $this->getCoordinadoraRRHHLocation();
+                if($locations == null){
+                    $locations = [$loc->location];
+                }
+
                $res= DmirhPersonalRequisition::with(['dmi_control_email_domain','dmi_cat_status_recruitment'])->join('personal_intelisis', 'personal_intelisis.usuario_ad', '=', 'dmirh_personal_requisition.user')
                ->select('dmirh_personal_requisition.*')
                ->where('personal_intelisis.status','ALTA')
@@ -1188,7 +1221,7 @@ class PersonalRequisitionController extends Controller
                    ->orWhere("dmirh_personal_requisition.status","cancelada")
                    ->orWhere("dmirh_personal_requisition.status","rechazada");
                })
-               ->where('personal_intelisis.location', $loc->location)
+               ->whereIn('personal_intelisis.location',$locations)
                ->orderBy("dmirh_personal_requisition.date","desc")->Paginate(100);
               }
 
@@ -1514,5 +1547,30 @@ if(count($signs2)>0){
         }
 
       }
+
+    public function getCoordinadoraRRHHLocation(){
+        $control_authorization_signatures = DmiControlAuthorizationSignature::join('dmicontrol_process','dmicontrol_authorization_signatures.dmi_control_process_id','=','dmicontrol_process.id')
+																->where('dmicontrol_process.name','Coordinadora_RRHH')
+																->where('dmicontrol_authorization_signatures.plaza_id',auth()->user()->personal_intelisis->plaza_id)
+																->whereNull('dmicontrol_process.deleted_at')
+																->whereNull('dmicontrol_authorization_signatures.deleted_at')
+																->select('dmicontrol_process.*')
+																->get()
+																->pluck('location');
+
+        return sizeof($control_authorization_signatures) > 0 ? $control_authorization_signatures : null;
+    }
+
+    public function userWhoCanValidate(){
+        $user_validator= DmiControlProcedureValidation::where('key','Requisition_PanelRequisition_user_who_can_validate-usuario_ad')
+                                                                ->where('value',auth()->user()->usuario)
+                                                                ->first();
+                                                                
+        if($user_validator){
+            return ["success" => 1];
+        }else{
+            return ["success" => 0];
+        }
+    }
 
 }

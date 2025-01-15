@@ -17,7 +17,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\File;
 use App\Services\SendEmailServiceSupplier;
 use App\Services\IntelisisSenderService;
-use App\Http\Controllers\Procore\Proveedores\VendorsController;
+// use App\Http\Controllers\Procore\Proveedores\VendorsController;
 use Illuminate\Support\Promise\Promise;
 
 class SupplierRegistrationController extends Controller
@@ -25,15 +25,15 @@ class SupplierRegistrationController extends Controller
 
     private $sendEmail, $intelisisService, $vendor;
 
-	public function __construct(SendEmailServiceSupplier $sendEmail, IntelisisSenderService $intelisisService,VendorsController $vendor)
+	public function __construct(SendEmailServiceSupplier $sendEmail, IntelisisSenderService $intelisisService)
 	{
 		$this->sendEmail = $sendEmail;
 		$this->intelisisService = $intelisisService;
-        $this->vendor= $vendor;
+        // $this->vendor= $vendor;
 	}
 
     protected function ExistRFC(Request $request){
-        // if(Auth::check()){
+   
             $intelisis_active = $this->intelisisService->supplierStatusRegistration($request["rfc"]);
         $res= DmiabaSupplierRegistration::with(['getDocumentSupplierAll','specialities'])->where("rfc",$request["rfc"])->first();
     if(!$intelisis_active){
@@ -44,45 +44,9 @@ class SupplierRegistrationController extends Controller
         'local' => $res,
         'intelisis' => $intelisis_active,
     ],200);
-    // }else{
-    //     return response()->json(null, 500);
-
-    // }
+   
     }
-    protected function addSupplierprueba(Request $request){
-
-        // if($request->file('file_INE')){
-        //     $uploaded_file = $request->file('file_INE');
-        //     $original_ext = $uploaded_file->getClientOriginalExtension();
-        //     // $file_name=$lastid."_".$time."_file_INE.".$original_ext;
-        //     // $doc= new DmiabaDocumentsSupplier();
-        //     // if( Storage::disk("Proveedores")->putFileAs("/", $uploaded_file, $file_name)){
-        //     //     $doc->name=$file_name;
-        //     //     $url= Storage::disk("Proveedores")->url($file_name);
-        //     //     $doc->url= $url;
-        //     //     $doc->cat_document_supplier_id= 2;
-        //     //     $doc->dmiaba_supplier_registration_id= $lastid;
-        //     //     $doc->save();
-        //     //   }
-             
-        // }
-
-        // $fileContents = file_get_contents($request->file('file_INE'));
-        // $uploadedFile = $request->file('file_INE');
-        // $filePath = $uploadedFile->getPath();
-        $fileContent = base64_encode(file_get_contents("C:\Users\irving.altuzar\Downloads\siapa_julio.pdf"));
-
-        // $arr=[
-        //         "file"=>[
-        //         "parent_id" => 11906880,
-        //         "data" => $fileContents
-            
-
-                
-        //         ]];
-        $result= $this->vendor->fileprocore($fileContent);
-    }
-
+  
     protected function addSupplier(Request $request){
         if(Auth::check()){
         
@@ -396,6 +360,8 @@ class SupplierRegistrationController extends Controller
         // if(Auth::check()){
         if($request["id"] !=""){
            $sup= DmiabaSupplierRegistration::find($request["id"]);
+           $sup->update_user= null;
+
         }else{
             $sup= new DmiabaSupplierRegistration();
 
@@ -425,19 +391,11 @@ class SupplierRegistrationController extends Controller
         $sup->status_files="revision";
         $sup->status=$request["status"];
         $sup->speciality_main=$request["classification_main"];
+        $sup->contact_reference=$request["contact_reference"];
         $sup->zip="si";
-        // $sup->user=auth()->user()->usuario;
-        $sup->user="lesly.galicia";
+        $sup->user= env('USER_PROCORE');
         $data["data"]=  $sup;
 
-        //Send Data information to Procore API
-        // try {
-        //     $result= $this->vendor->CreateVendor($sup);
-        //     $promise= $this->vendor->CreateUserVendor($sup);
-        //     $this->vendor->InviteVendor($promise["id"]);
-        // } catch (\Throwable $th) {
-        //     throw $th;
-        // }
         $sup->save();
         if($request["id"]!=""){
             $lastid=$request["id"];
@@ -448,9 +406,9 @@ class SupplierRegistrationController extends Controller
 
         $arrayResult = explode(",", $request["classification_aditional"]);
 
-        if(count($arrayResult)>0){
+        if (!empty($arrayResult) && array_filter($arrayResult, 'strlen')) {
             foreach ($arrayResult as $specialty) {
-                $data = SupplierSpecialty::updateOrCreate([
+                $spe = SupplierSpecialty::updateOrCreate([
                     'supplier_id' =>  $lastid,
                     'cat_supplier_specialty' => $specialty
                 ]);
@@ -461,9 +419,22 @@ class SupplierRegistrationController extends Controller
         for ($i=0; $i < $request["nfiles"]; $i++) { 
             $n="files".$i;
         $file = $request->file($n);
-        $original_ext = $file->getClientOriginalExtension();
-        $fname = $file->getClientOriginalName();
-        $file_name=$lastid."_".$fname;
+        $originalName = $file->getClientOriginalName();
+        // Obtenemos el nombre del archivo sin la extensión
+        $fileNameWithoutExtension = pathinfo($originalName, PATHINFO_FILENAME);
+        
+        // Eliminamos los caracteres especiales del nombre del archivo
+        $cleanFileName =preg_replace('/[^A-Za-z0-9\-]/', '_', $fileNameWithoutExtension);
+        
+        // Obtenemos la extensión del archivo
+        $extension = $file->getClientOriginalExtension();
+        
+        // Concatenamos el nombre limpio con la extensión
+        $cleanFileNameWithExtension = $cleanFileName . '.' . $extension;
+        
+        // Construimos el nuevo nombre de archivo completo
+        $file_name = $lastid . '_' . $cleanFileNameWithExtension;
+            
         if(Storage::disk("Proveedores")->putFileAs("/", $file, $file_name)){
             $doc= new DmiabaDocumentsSupplier();
                 $doc->name=$file_name;
@@ -475,193 +446,6 @@ class SupplierRegistrationController extends Controller
             }
         }
   
-            // $doc= new DmiabaDocumentsSupplier();
-        //     if( ){
-        //         // $doc->name=$file_name;
-        //         // $url= Storage::disk("Proveedores")->url($file_name);
-        //         // $doc->url= $url;
-        //         // $doc->cat_document_supplier_id= 21;
-        //         // $doc->dmiaba_supplier_registration_id= $lastid;
-        //         // $doc->save();
-        //       }
-        // }
-    // }
-        // if($request->file('file_ActaConstitutiva')){
-        //     $uploaded_file = $request->file('file_ActaConstitutiva');
-        //     $original_ext = $uploaded_file->getClientOriginalExtension();
-        //     $file_name=$lastid."_".$time."_file_ActaConstitutiva.".$original_ext;
-            
-        //     $doc= new DmiabaDocumentsSupplier();
-        //     if( Storage::disk("Proveedores")->putFileAs("/", $uploaded_file, $file_name)){
-        //         $doc->name=$file_name;
-        //         $url= Storage::disk("Proveedores")->url($file_name);
-        //         $doc->url= $url;
-        //         $doc->cat_document_supplier_id= 1;
-        //         $doc->dmiaba_supplier_registration_id= $lastid;
-        //         $doc->save();
-        //       }
-        // }
-
-        // if($request->file('file_INE')){
-        //     $uploaded_file = $request->file('file_INE');
-        //     $original_ext = $uploaded_file->getClientOriginalExtension();
-        //     $file_name=$lastid."_".$time."_file_INE.".$original_ext;
-        //     $doc= new DmiabaDocumentsSupplier();
-        //     if( Storage::disk("Proveedores")->putFileAs("/", $uploaded_file, $file_name)){
-        //         $doc->name=$file_name;
-        //         $url= Storage::disk("Proveedores")->url($file_name);
-        //         $doc->url= $url;
-        //         $doc->cat_document_supplier_id= 2;
-        //         $doc->dmiaba_supplier_registration_id= $lastid;
-        //         $doc->save();
-        //       }
-             
-        // }
-
-        // if($request->file('file_ComprobanteDomicilio')){
-        //     $uploaded_file = $request->file('file_ComprobanteDomicilio');
-        //     $original_ext = $uploaded_file->getClientOriginalExtension();
-        //     $file_name=$lastid."_".$time."_file_ComprobanteDomicilio.".$original_ext;
-        //     $doc= new DmiabaDocumentsSupplier();
-        //     if( Storage::disk("Proveedores")->putFileAs("/", $uploaded_file, $file_name)){
-        //         $doc->name=$file_name;
-        //         $url= Storage::disk("Proveedores")->url($file_name);
-        //         $doc->url= $url;
-        //         $doc->cat_document_supplier_id= 3;
-        //         $doc->dmiaba_supplier_registration_id= $lastid;
-        //         $doc->save();
-        //       }
-        // }
-        // if($request->file('file_OCOF')){
-        //     $uploaded_file = $request->file('file_OCOF');
-        //     $original_ext = $uploaded_file->getClientOriginalExtension();
-        //     $file_name=$lastid."_".$time."_file_OCOF.".$original_ext;
-        //     $doc= new DmiabaDocumentsSupplier();
-        //     if( Storage::disk("Proveedores")->putFileAs("/", $uploaded_file, $file_name)){
-        //         $doc->name=$file_name;
-        //         $url= Storage::disk("Proveedores")->url($file_name);
-        //         $doc->url= $url;
-        //         $doc->cat_document_supplier_id= 5;
-        //         $doc->dmiaba_supplier_registration_id= $lastid;
-        //         $doc->save();
-        //       }
-             
-        // }
-        // if($request->file('file_CSF')){
-        //     $uploaded_file = $request->file('file_CSF');
-        //     $original_ext = $uploaded_file->getClientOriginalExtension();
-        //     $file_name=$lastid."_".$time."_file_CSF.".$original_ext;
-        //     $doc= new DmiabaDocumentsSupplier();
-        //     if( Storage::disk("Proveedores")->putFileAs("/", $uploaded_file, $file_name)){
-        //         $doc->name=$file_name;
-        //         $url= Storage::disk("Proveedores")->url($file_name);
-        //         $doc->url= $url;
-        //         $doc->cat_document_supplier_id= 4;
-        //         $doc->dmiaba_supplier_registration_id= $lastid;
-        //         $doc->save();
-        //       }
-             
-        // }
-        // if($request->file('file_AltaIMSS')){
-        //     $uploaded_file = $request->file('file_AltaIMSS');
-        //     $original_ext = $uploaded_file->getClientOriginalExtension();
-        //     $file_name=$lastid."_".$time."_file_AltaIMSS.".$original_ext;
-        //     $doc= new DmiabaDocumentsSupplier();
-        //     if( Storage::disk("Proveedores")->putFileAs("/", $uploaded_file, $file_name)){
-        //         $doc->name=$file_name;
-        //         $url= Storage::disk("Proveedores")->url($file_name);
-        //         $doc->url= $url;
-        //         $doc->cat_document_supplier_id= 6;
-        //         $doc->dmiaba_supplier_registration_id= $lastid;
-        //         $doc->save();
-        //       }
-             
-        // }
-        // if($request->file('file_OCOIMSS')){
-        //     $uploaded_file = $request->file('file_OCOIMSS');
-        //     $original_ext = $uploaded_file->getClientOriginalExtension();
-        //     $file_name=$lastid."_".$time."_file_OCOIMSS.".$original_ext;
-        //     $doc= new DmiabaDocumentsSupplier();
-        //     if( Storage::disk("Proveedores")->putFileAs("/", $uploaded_file, $file_name)){
-        //         $doc->name=$file_name;
-        //         $url= Storage::disk("Proveedores")->url($file_name);
-        //         $doc->url= $url;
-        //         $doc->cat_document_supplier_id= 7;
-        //         $doc->dmiaba_supplier_registration_id= $lastid;
-        //         $doc->save();
-        //       }
-        // }
-        // if($request->file('file_EstCuenta')){
-        //     $uploaded_file = $request->file('file_EstCuenta');
-        //     $original_ext = $uploaded_file->getClientOriginalExtension();
-        //     $file_name=$lastid."_".$time."_file_EstCuenta.".$original_ext;
-        //     $doc= new DmiabaDocumentsSupplier();
-        //     if( Storage::disk("Proveedores")->putFileAs("/", $uploaded_file, $file_name)){
-        //         $doc->name=$file_name;
-        //         $url= Storage::disk("Proveedores")->url($file_name);
-        //         $doc->url= $url;
-        //         $doc->cat_document_supplier_id= 8;
-        //         $doc->dmiaba_supplier_registration_id= $lastid;
-        //         $doc->save();
-        //       }
-        // }
-        // if($request->file('file_CTB')){
-        //     $uploaded_file = $request->file('file_CTB');
-        //     $original_ext = $uploaded_file->getClientOriginalExtension();
-        //     $file_name=$lastid."_".$time."_file_CTB.".$original_ext;
-        //     $doc= new DmiabaDocumentsSupplier();
-        //     if( Storage::disk("Proveedores")->putFileAs("/", $uploaded_file, $file_name)){
-        //         $doc->name=$file_name;
-        //         $url= Storage::disk("Proveedores")->url($file_name);
-        //         $doc->url= $url;
-        //         $doc->cat_document_supplier_id= 9;
-        //         $doc->dmiaba_supplier_registration_id= $lastid;
-        //         $doc->save();
-        //       }
-        // }
-        // if($request->file('file_CV')){
-        //     $uploaded_file = $request->file('file_CV');
-        //     $original_ext = $uploaded_file->getClientOriginalExtension();
-        //     $file_name=$lastid."_".$time."_file_CV.".$original_ext;
-        //     $doc= new DmiabaDocumentsSupplier();
-        //     if( Storage::disk("Proveedores")->putFileAs("/", $uploaded_file, $file_name)){
-        //         $doc->name=$file_name;
-        //         $url= Storage::disk("Proveedores")->url($file_name);
-        //         $doc->url= $url;
-        //         $doc->cat_document_supplier_id= 10;
-        //         $doc->dmiaba_supplier_registration_id= $lastid;
-        //         $doc->save();
-        //       }
-        // }
-      
-        // if($request->file('file_REPSE')){
-        //     $uploaded_file = $request->file('file_REPSE');
-        //     $original_ext = $uploaded_file->getClientOriginalExtension();
-        //     $file_name=$lastid."_".$time."_file_REPSE.".$original_ext;
-        //     $doc= new DmiabaDocumentsSupplier();
-        //     if( Storage::disk("Proveedores")->putFileAs("/", $uploaded_file, $file_name)){
-        //         $doc->name=$file_name;
-        //         $url= Storage::disk("Proveedores")->url($file_name);
-        //         $doc->url= $url;
-        //         $doc->cat_document_supplier_id= 16;
-        //         $doc->dmiaba_supplier_registration_id= $lastid;
-        //         $doc->save();
-        //       }
-        // }
-        // if($request->file('file_DAER')){
-        //     $uploaded_file = $request->file('file_DAER');
-        //     $original_ext = $uploaded_file->getClientOriginalExtension();
-        //     $file_name=$lastid."_".$time."_file_DAER.".$original_ext;
-        //     $doc= new DmiabaDocumentsSupplier();
-        //     if( Storage::disk("Proveedores")->putFileAs("/", $uploaded_file, $file_name)){
-        //         $doc->name=$file_name;
-        //         $url= Storage::disk("Proveedores")->url($file_name);
-        //         $doc->url= $url;
-        //         $doc->cat_document_supplier_id= 17;
-        //         $doc->dmiaba_supplier_registration_id= $lastid;
-        //         $doc->save();
-        //       }
-        // }
   
         $data["subject"] = "Notificación: Nuevo proveedor";
         $adm = DB::table("cat_supplier_notification")->where("deleted_at",null)->select('mail')->get();
@@ -669,14 +453,11 @@ class SupplierRegistrationController extends Controller
         foreach ($adm as $row) {
             $mails[]= $row->mail;
         }
-        // $this->sendEmail->newSupplierNotification($data, $mails);
-
+        if($request["status"]==0){
+        $this->sendEmail->newSupplierNotification($data, $mails);
+        }
         return response()->json(['success'=>'Se ha creado nuevo proveedor.','id'=> $lastid],200);
-    // }
-    // else{
-    //     return response()->json(null, 500);
-
-    // }
+   
     }
 
     protected function DeleteSupplierWeb(Request $request){

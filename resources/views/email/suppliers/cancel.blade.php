@@ -6,7 +6,7 @@ Te informamos que {{ Auth()->user()->personal_intelisis->name }} {{ Auth()->user
 
 <b>Motivo: </b> {{ $data->comment }}
 
-@component('mail::button', ['url' => 'http://192.168.3.170:8080/proveedores/registroproveedores'])
+@component('mail::button', ['url' => 'http://192.168.3.170:8006'])
 Ingresar
 @endcomponent
 

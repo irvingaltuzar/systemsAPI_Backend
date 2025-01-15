@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Alfa\RecursosHumanos;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\PersonalIntelisis;
+use App\Models\PersonalIntelisis as PersonalIntelisis;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Support\Facades\DB;
@@ -44,11 +44,11 @@ class PersonalIntelisisController extends Controller
         }
 
     }
-    protected function updatePersonalIntelisisSP(){
+    public function updatePersonalIntelisisSP(){
 
         $stmt= DB::connection('erp_sqlsrv')->select("EXECUTE [dbo].[SP_DatosPersonalParaParaWEB] '',0,'1600/01/01','2997/12/31'");
-            
-        // return $stmt;
+        set_time_limit(120);     
+        //return $stmt;
         foreach ($stmt as $res) {
             //  var_dump($res);
  
@@ -68,9 +68,9 @@ class PersonalIntelisisController extends Controller
                 $per->last_name=$res->Apellidos;
                 $per->birth=$res->FechaNacimiento;
                 $per->sex=$res->Genero;
-                $per->total_vacation_days=intval($res->DiasVacTotal);
+                $per->total_vacation_days=intval($res->DiasVacTotal) > 0 ? intval($res->DiasVacTotal) : 0;
                 if(isset($res->eMailEmpresa) || $res->eMailEmpresa!=""){
-                    $per->email=$res->eMailEmpresa;
+                    $per->email=str_replace(" ","",$res->eMailEmpresa);
                     }
                     $per->extension=$res->Extension;
                     $per->photo=$res->DirFoto;
@@ -88,6 +88,7 @@ class PersonalIntelisisController extends Controller
                     if(isset($res->Ubicacion) || $res->Ubicacion!=""){
                     $per->location=$res->Ubicacion;
                     }
+                    $per->group=$res->GrupoComunicados;
                     $per->payment_period=$res->PeriodoTipo;
                     $per->company_name=$res->NombreEmpresa;
                     $per->company_code=$res->Empresa;
@@ -100,9 +101,45 @@ class PersonalIntelisisController extends Controller
                     $per->top_plaza_id=$res->PlazaSup;
                     }
                     $per->status=$res->Estatus;
-                if(isset($res->usuarioAD) || $res->usuarioAD!=""){
-                $per->usuario_ad= strtolower($res->usuarioAD);
+                if(isset($res->usuarioAD) && $res->usuarioAD!=""){
+					
+					if(!empty($res->usuarioAD)){
+						$per->usuario_ad= strtolower($res->usuarioAD);
+					}
+					
+					$temp_seg_usuario = Usuario::where('usuario',$res->usuarioAD)->first();
+					
+					if($temp_seg_usuario == null){
+						
+						//Creacion de usuario
+						// Separamos el apellido en un array usando el espacio como separador
+						$temp_apellidos_array = explode(" ", $res->Apellidos);
+
+						// El primer elemento del array es el apellido paterno
+						$apellido_paterno = $temp_apellidos_array[0];
+
+						// Inicializamos el apellido materno como una cadena vacía
+						$apellido_materno = "";
+
+						// Recorremos los elementos restantes del array y los concatenamos al apellido materno
+						for ($i = 1; $i < count($temp_apellidos_array); $i++) {
+							$apellido_materno .= $temp_apellidos_array[$i] . " ";
+						}
+						$temp_usuario= new Usuario();
+						$temp_usuario->nombre= $res->Nombre;
+						$temp_usuario->apePat= $apellido_paterno;
+						$temp_usuario->apeMat= $apellido_materno;
+						$temp_usuario->usuario= strtolower($res->usuarioAD);
+						$temp_usuario->password= bcrypt('OupQrqJT');
+						$temp_usuario->roles= 0;
+						$temp_usuario->borrado= 0;
+						$temp_usuario->save();
+					
+					}
+					
+					
                 }
+                
                  $per->rfc=$res->RFC;
 
                     $per->save();
@@ -110,13 +147,14 @@ class PersonalIntelisisController extends Controller
 
                }else{
                 if($res->usuarioAD!="" || $res->usuarioAD!=null){
+                $aux_user = strtolower($res->RFC);
                 $personal = new PersonalIntelisis();
                 $personal->personal_id=$res->Personal;
                 $personal->name=$res->Nombre;
                 $personal->last_name=$res->Apellidos;
                 $personal->birth=$res->FechaNacimiento;
                 $personal->sex=$res->Genero;
-                $personal->email=$res->eMailEmpresa;
+                $personal->email=str_replace(" ","",$res->eMailEmpresa);
                 $personal->extension=$res->Extension;
                 $personal->photo=$res->DirFoto;
                 $personal->position_company=$res->Puesto;
@@ -125,6 +163,7 @@ class PersonalIntelisisController extends Controller
                 $personal->date_admission=$res->FechaIngreso;
                 $personal->antiquity_date=$res->FechaAntiguedad;
                 $personal->location=$res->Ubicacion;
+                $personal->group=$res->GrupoComunicados;
                 $personal->payment_period=$res->PeriodoTipo;
                 $personal->company_name=$res->NombreEmpresa;
                 $personal->company_code=$res->Empresa;
@@ -132,9 +171,9 @@ class PersonalIntelisisController extends Controller
                 $personal->plaza_id=$res->Plaza;
                 $personal->top_plaza_id=$res->PlazaSup;
                 $personal->status=$res->Estatus;
-                $personal->usuario_ad=strtolower($res->usuarioAD);
+                $personal->usuario_ad=$aux_user;
                 $personal->previous_personal_id=$res->CodigoAnterior;
-                $personal->total_vacation_days= intval($res->DiasVacTotal);
+                $personal->total_vacation_days= intval($res->DiasVacTotal) > 0 ? intval($res->DiasVacTotal) : 0;
                 $personal->rfc=$res->RFC;
                 $personal->save();
 
@@ -159,14 +198,20 @@ class PersonalIntelisisController extends Controller
                     $usuario->nombre= $res->Nombre;
                     $usuario->apePat= $apellido_paterno;
                     $usuario->apeMat= $apellido_materno;
-                    $usuario->usuario= $res->usuarioAD;
+                    $usuario->usuario= $aux_user;
                     $usuario->password= bcrypt('OupQrqJT');
                     $usuario->roles= 0;
                     $usuario->borrado= 0;
                     $usuario->save();
                     //Creacion de Horario
+                    $aux_user="";
+                    if(isset($res->usuarioAD) || $res->usuarioAD!=""){
+                        $aux_user= strtolower($res->usuarioAD);
+                    }else{
+                        $aux_user= strtolower($res->RFC);
+                    }
                     $personaltime = new DmirhPersonalTime();
-                    $personaltime->user = $res->usuarioAD;
+                    $personaltime->user = strtolower($aux_user);
                     $personaltime->dmirh_cat_time_status_id = 1;
                     $personaltime->start_date = Carbon::now();
                     $personaltime->approved_by = "Sistemas";

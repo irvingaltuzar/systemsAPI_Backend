@@ -35,19 +35,15 @@ class DmirhPersonalTimeDetail extends Model
 		'week_day' => 'int',
 		'deleted' => 'int',
 		'created_at' => "datetime:Y-m-d h:i:s",
-		'entry_hour' => "datetime:h:i:s",
-		'exit_food_hour' => "datetime:h:i:s",
-		'entry_food_hour' => "datetime:h:i:s",
-		'exit_hour' => "datetime:h:i:s",
 		'updated_at' => 'datetime:Y-m-d h:i:s',
 	];
 
-	protected $dates = [
+	/* protected $dates = [
 		'entry_hour',
 		'exit_food_hour',
 		'entry_food_hour',
 		'exit_hour'
-	];
+	]; */
 
 	protected $fillable = [
 		'dmirh_personal_time_id',

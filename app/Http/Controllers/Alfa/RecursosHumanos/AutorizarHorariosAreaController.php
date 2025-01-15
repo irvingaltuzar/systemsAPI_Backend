@@ -16,8 +16,20 @@ use App\Models\DmiRh\DmirhPersonalTimeComment as PersonalTimeComment;
 use App\Models\DmiRh\DmirhCatTimeStatus as CatTimeStatus;
 use App\Models\DmiRh\DmirhWorkSchedule as WorkSchedule;
 use App\Models\PersonalIntelisis as PersonalIntelisis;
+use App\Services\SendEmailService;
+use App\Repositories\GeneralFunctionsRepository;
+
 class AutorizarHorariosAreaController extends Controller
 {
+
+  private $sendEmail, $GeneralFunctionsRepository;
+
+	public function __construct(SendEmailService $sendEmail, GeneralFunctionsRepository $GeneralFunctionsRepository)
+	{
+        //$this->middleware('guest',['only'=>'ShowLogin']);
+		$this->sendEmail = $sendEmail;
+    $this->GeneralFunctionsRepository = $GeneralFunctionsRepository;
+	}
 
   protected function getHorariosMiPersonalAutorizar(){
     $usuario =auth()->user()->usuario;
@@ -48,11 +60,10 @@ class AutorizarHorariosAreaController extends Controller
         //         on a.id=b.dmirh_personal_time_id inner join dmirh_cat_time_status as c on a.dmirh_cat_time_status_id=c.id
         //                           where c.description='Pendiente' and
         //                           a.user='". $pers->usuario_ad."'  and b.deleted=0 and a.id=max_user.creado");
-    $res2= DB::table('dmirh_personal_time')
-    ->join('dmirh_personal_time_detail', 'dmirh_personal_time.id', '=', 'dmirh_personal_time_detail.dmirh_personal_time_id')
+    $res2= PersonalTime::join('dmirh_personal_time_detail', 'dmirh_personal_time.id', '=', 'dmirh_personal_time_detail.dmirh_personal_time_id')
     ->join('cat_time_status', 'dmirh_personal_time.dmirh_cat_time_status_id', '=', 'cat_time_status.id')
     ->where('cat_time_status.description','Pendiente')->where('dmirh_personal_time.active',1)->where('dmirh_personal_time.user',$pers->usuario_ad)->get();
-
+    
     if(count($res2) > 0){
 
         foreach($res2 as $hor){
@@ -117,6 +128,8 @@ class AutorizarHorariosAreaController extends Controller
             }
             $status= $hor->description;
             $idpersonalTime= $hor->dmirh_personal_time_id;
+            $hours_week= $hor->hours_week;
+            $special_situation= $hor->special_situation;
 
         }
 
@@ -133,6 +146,8 @@ class AutorizarHorariosAreaController extends Controller
            "domingo" =>$domingo,
            "status"=>  $status,
            "Idtime"=>  $idpersonalTime,
+           "hours_week"=>  $hours_week,
+           "special_situation"=>  $special_situation,
         ]);
     }
   }
@@ -143,19 +158,49 @@ class AutorizarHorariosAreaController extends Controller
 
 protected function autorizarHorarioPersonal(Request $request){
 
-  $datos= $this->validate(request(),[
-
+    $datos= $this->validate(request(),[
     'IdTime' => 'required'
-
     ]);
 
     $personalHorario= PersonalTime::find($datos["IdTime"]);
     $personalHorario->dmirh_cat_time_status_id= 4;
-    $personalHorario->approved_by= 'arturo.jara';
+    $personalHorario->approved_by= auth()->user()->usuario;
     $personalHorario->approved_date= date('Y-m-d H:i:s');
     $personalHorario->save();
 
-  return response()->json(['success'=>'Horario Autorizado Correctamente.'],200);
+    $collaborator = PersonalIntelisis::where('usuario_ad',$personalHorario->user)
+                                    ->where('status','ALTA')->first();
+
+    $status = CatTimeStatus::find($personalHorario->dmirh_cat_time_status_id);
+
+    $this->sendEmail->ChangeWorkScheduleNotification([
+        'data' =>[
+            'boss_full_name'=> auth()->user()->personal_intelisis->name.' '.auth()->user()->personal_intelisis->last_name,
+            'collaborator_full_name' => $collaborator->name.' '.$collaborator->last_name,
+            'type' => "collaborator",
+            'status' => $status->description,
+        ],    
+        'to_email' =>$collaborator->email,
+        'module' =>'control_horarios',
+    ]);
+
+    $coordinadora_rrhh = $this->GeneralFunctionsRepository->getCoordinadoraRRHH($collaborator->location);
+    if($coordinadora_rrhh['success'] == 1){
+        $this->sendEmail->ChangeWorkScheduleNotification([
+            'data' =>[
+                'boss_full_name'=> auth()->user()->personal_intelisis->name.' '.auth()->user()->personal_intelisis->last_name,
+                'collaborator_full_name' => $collaborator->name.' '.$collaborator->last_name,
+                'rrhh_full_name' => $coordinadora_rrhh["data"]['name'].' '.$coordinadora_rrhh["data"]['last_name'],
+                'type' => "rrhh",
+                'status' => $status->description,
+            ],    
+            'to_email' =>$coordinadora_rrhh["data"]['email'],
+            'module' =>'control_horarios',
+        ]);
+    }
+
+
+    return response()->json(['success'=>'Horario Autorizado Correctamente.'],200);
 }
 protected function rechazarHorarioPersonal(Request $request){
 
@@ -167,8 +212,30 @@ protected function rechazarHorarioPersonal(Request $request){
 
     $personalHorario= PersonalTime::find($datos["IdTime"]);
     $personalHorario->dmirh_cat_time_status_id= 3;
-    $personalHorario->approved_by= 'arturo.jara';
+    $personalHorario->approved_by= auth()->user()->usuario;
+    $personalHorario->number_cancellations= intval($personalHorario->number_cancellations)+1;
+    if($personalHorario->number_cancellations >= 2){
+      $personalHorario->edit = 0;
+    }else{
+      $personalHorario->edit = 1;
+    }
+    
     $personalHorario->save();
+
+    $collaborator = PersonalIntelisis::where('usuario_ad',$personalHorario->user)
+                                      ->where('status','ALTA')->first();
+    $status = CatTimeStatus::find($personalHorario->dmirh_cat_time_status_id);
+
+    $this->sendEmail->ChangeWorkScheduleNotification([
+      'data' =>[
+          'boss_full_name'=> auth()->user()->personal_intelisis->name.' '.auth()->user()->personal_intelisis->last_name,
+          'collaborator_full_name' => $collaborator->name.' '.$collaborator->last_name,
+          'type' => "collaborator",
+          'status' => $status->description,
+      ],    
+      'to_email' =>$collaborator->email,
+      'module' =>'control_horarios',
+  ]);
 
   return response()->json(['success'=>'Horario rechazado Correctamente.'],200);
 }
